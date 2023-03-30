@@ -1,36 +1,122 @@
 "use client";
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState("");
   const [generatedAnswer, setGeneratedAnswer] = useState("");
+  const [sanitizedTracks, setSanitizedTracks] = useState("");
   const [input, setInput] = useState("");
+  const [tracks, setTracks] = useState([]);
 
-  const prompt = `Give me a unique list of 5 songs based on this mood, feeling, or specific query: ${input}`
-  
+  const prompt = `Give me a song based on this mood, feeling, or specific query: ${input}`
+
   const generateAnswer = async (e: any) => {
-    e.preventDefault();
-    setGeneratedAnswer("");
-    setLoading(true);
+    if (input !== "") {
+      e.preventDefault();
+      setGeneratedAnswer("");
+      setLoading(true);
+      const response = await fetch("/api/openAI", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+        }),
+      });
+  
+      if (response.ok) {
+        // console.log('Response is ok:', response);
+      } else {
+        console.error('Error:', response.status, response.statusText);
+      }
+  
+      let answer = await response.json();
+  
+      setGeneratedAnswer(answer.data.choices[0].text);
+      setLoading(false);
+    }
+  };
 
-    const response = await fetch("/api/openAI", {
-      method: "POST",
+  useEffect(() => {
+    setSanitizedTracks(
+      generatedAnswer
+      .replace(/ /g, "%20")
+    );
+  }, [generatedAnswer]);
+
+  useEffect(() => {
+    if (sanitizedTracks !== "") {
+      searchForSong(sanitizedTracks);
+    }
+  }, [sanitizedTracks]);
+
+
+  useEffect(() => {
+    const response = fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Basic ' + Buffer.from(process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID + ':' + process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET).toString('base64')
       },
-      body: JSON.stringify({
-        prompt,
-      }),
+      body: 'grant_type=client_credentials'
+    }).then(response => response.json()).then(data => {
+      console.log(data)
+      setToken(data.access_token)
+    }).catch(error => {
+      console.error(error)
     });
 
-    if (!response.ok) {
-      throw new Error(response.statusText);
-    }
+    console.log(token)
+  }, []);
 
-    let answer = await response.json();
-    setGeneratedAnswer(answer.data.choices[0].text);
-    setLoading(false);
-  };
+  useEffect(() => {
+    if (token) {
+      const interval = setInterval(() => {
+        refreshAccessToken();
+        console.log('Refreshing access token');
+      }, 3600000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
+
+
+  async function refreshAccessToken() {
+    const authHeader = 'Basic ' + Buffer.from(process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID + ':' + process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET).toString('base64');
+  
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': authHeader
+      },
+      body: `grant_type=refresh_token&refresh_token=${process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN}`
+    });
+  
+    if (response.ok) {
+      const data = await response.json();
+      const accessToken = data.access_token;
+      // Use the access token or store it for later use
+      console.log('Access Token:', accessToken);
+      setToken(accessToken);
+    } else {
+      console.error('Failed to refresh access token');
+    }
+  }
+
+  async function searchForSong(sanitizedTracks: string) {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${sanitizedTracks}&type=track&limit=3`, {
+      headers: {
+          'Authorization': 'Bearer ' + token
+      }
+    });
+
+    const data = await response.json();
+    console.log(data);
+    setTracks(data?.tracks?.items);
+  }
 
   return (
     <main className='bg-white w-[80%] m-auto'>
@@ -42,6 +128,9 @@ export default function Home() {
         type="text" 
       />
       <p className='text-xl font-medium'>{generatedAnswer}</p>
+      {tracks?.map((track: any, id) => (
+        <p key={id}>{track.name}</p>
+      ))}
       <div className='w-[50%] m-auto'>
         {!loading && (
           <button
