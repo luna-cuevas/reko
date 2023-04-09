@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react'
-
+import Track from '../components/Track';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -17,33 +17,36 @@ export default function Home() {
       e.preventDefault();
       setGeneratedAnswer("");
       setLoading(true);
-      const response = await fetch("/api/openAI", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-        }),
-      });
   
-      if (response.ok) {
-        // console.log('Response is ok:', response);
-      } else {
-        console.error('Error:', response.status, response.statusText);
+      try {
+        const response = await fetch("/api/openAI", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+          }),
+        });
+  
+        const answer = await response.json();
+        console.log(answer);
+        setGeneratedAnswer(answer.data.choices[0].text);
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(`Error during OpenAI API call: ${error.message}`);
+        } else {
+          console.error('Unknown error occurred during OpenAI API call:', error);
+        }
+      } finally {
+        setLoading(false);
       }
-  
-      let answer = await response.json();
-  
-      setGeneratedAnswer(answer.data.choices[0].text);
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     setSanitizedTracks(
       generatedAnswer
-      .replace(/ /g, "%20")
     );
   }, [generatedAnswer]);
 
@@ -63,7 +66,7 @@ export default function Home() {
       },
       body: 'grant_type=client_credentials'
     }).then(response => response.json()).then(data => {
-      console.log(data)
+      // console.log(data)
       setToken(data.access_token)
     }).catch(error => {
       console.error(error)
@@ -107,11 +110,12 @@ export default function Home() {
   }
 
   async function searchForSong(sanitizedTracks: string) {
-    const response = await fetch(`https://api.spotify.com/v1/search?q=${sanitizedTracks}&type=track&limit=3`, {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${sanitizedTracks}&type=track&limit=1`, {
       headers: {
-          'Authorization': 'Bearer ' + token
+        'Authorization': 'Bearer ' + token
       }
     });
+    console.log(sanitizedTracks)
 
     const data = await response.json();
     console.log(data);
@@ -128,16 +132,13 @@ export default function Home() {
         type="text" 
       />
       <p className='text-xl font-medium'>{generatedAnswer}</p>
-      {tracks?.map((track: any, id) => (
-        <p key={id}>{track.name}</p>
-      ))}
       <div className='w-[50%] m-auto'>
         {!loading && (
           <button
             className="bg-black rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
             onClick={(e) => generateAnswer(e)}
           >
-            Generate your bio &rarr;
+            Hit me &rarr;
           </button>
         )}
         {loading && (
@@ -147,6 +148,12 @@ export default function Home() {
           >
           </button>
         )}
+      </div>
+
+      <div>
+        {tracks?.map((track: any, id) => (
+          <Track key={id} track={track} />
+        ))}
       </div>
     </main>
   )
