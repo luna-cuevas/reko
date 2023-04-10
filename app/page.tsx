@@ -1,43 +1,76 @@
 "use client";
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import Track from '../components/Track';
+
+type Artist = {
+  name: string;
+};
+
+type Album = {
+  name: string;
+  uri: string;
+  images: { url: string }[]; // Add the images property to the Album type
+};
+
+type TrackData = {
+  name: string;
+  artists: Artist[];
+  album: Album;
+  uri: string;
+  preview_url: string;
+};
+
+type OpenAIAPIResponse = {
+  data: {
+    choices: Array<{
+      text: string;
+    }>;
+  };
+};
+
+type SpotifyAPIResponse = {
+  tracks: {
+    items: TrackData[];
+  };
+};
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState("");
-  const [generatedAnswer, setGeneratedAnswer] = useState("");
-  const [sanitizedTracks, setSanitizedTracks] = useState("");
-  const [input, setInput] = useState("");
-  const [tracks, setTracks] = useState([]);
+  const [token, setToken] = useState<string | null>(null);
+  const [generatedAnswer, setGeneratedAnswer] = useState('');
+  const [sanitizedTracks, setSanitizedTracks] = useState('');
+  const [input, setInput] = useState('');
+  const [tracks, setTracks] = useState<TrackData[]>([]);
+  const [suggestedSong, setSuggestedSong] = useState('');
 
-  const prompt = `Give me a song based on this mood, feeling, or specific query: ${input}`
+  // const prompt = `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\nSong Name - Artist Name\nSong Name - Artist Name`
 
-  const generateAnswer = async (e: any) => {
-    if (input !== "") {
+  const prompt = `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n ${
+    suggestedSong ? `On subsequent queries, consider some of these suggested songs and blend the genres into your suggestions: ${suggestedSong}` : ''
+  }`;
+
+  const generateAnswer = async (e: React.FormEvent) => {
+    if (input !== '') {
       e.preventDefault();
-      setGeneratedAnswer("");
+      setGeneratedAnswer('');
       setLoading(true);
-  
+
       try {
-        const response = await fetch("/api/openAI", {
-          method: "POST",
+        const response = await fetch('/api/openAI', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             prompt: prompt,
           }),
         });
-  
-        const answer = await response.json();
+
+        const answer: OpenAIAPIResponse = await response.json();
         console.log(answer);
         setGeneratedAnswer(answer.data.choices[0].text);
       } catch (error) {
-        if (error instanceof Error) {
-          console.error(`Error during OpenAI API call: ${error.message}`);
-        } else {
-          console.error('Unknown error occurred during OpenAI API call:', error);
-        }
+        console.error('Error during OpenAI API call:', error);
       } finally {
         setLoading(false);
       }
@@ -52,7 +85,22 @@ export default function Home() {
 
   useEffect(() => {
     if (sanitizedTracks !== "") {
-      searchForSong(sanitizedTracks);
+
+      // split after every line break
+      const tracksArray = sanitizedTracks.split('\n');
+      // if item is empty string, remove it
+      tracksArray.forEach((item, index) => {
+        if (item == "" || item == '' || item == ' ') {
+          tracksArray.splice(index, 1);
+        }
+      });
+      // for each item, call searchForSong
+      tracksArray.forEach((item, index) => {
+        // if item is not empty string, call searchForSong
+        if (item !== "" || item !== '') {
+          searchForSong(item);
+        }
+      });
     }
   }, [sanitizedTracks]);
 
@@ -72,7 +120,7 @@ export default function Home() {
       console.error(error)
     });
 
-    console.log(token)
+    // console.log(token)
   }, []);
 
   useEffect(() => {
@@ -110,32 +158,46 @@ export default function Home() {
   }
 
   async function searchForSong(sanitizedTracks: string) {
+    
     const response = await fetch(`https://api.spotify.com/v1/search?q=${sanitizedTracks}&type=track&limit=1`, {
       headers: {
-        'Authorization': 'Bearer ' + token
-      }
+        'Authorization': 'Bearer ' + token,
+      },
     });
-    console.log(sanitizedTracks)
+    // console.log(sanitizedTracks);
 
-    const data = await response.json();
-    console.log(data);
-    setTracks(data?.tracks?.items);
+    const data: SpotifyAPIResponse = await response.json();
+    // console.log(data);
+    // this is an array of track objects, add to setTracks array state
+    setTracks((prevTracks) => [...prevTracks, ...data.tracks.items]);
+    console.log(tracks);
   }
+  
 
+  const handleLike = (artist: string) => {
+    setSuggestedSong((prevSuggestedSong) => prevSuggestedSong + artist + '\n');
+  };
+
+  // useEffect(() => {
+  //   console.log(suggestedSong);
+  // }, [suggestedSong]);
+
+  useEffect(() => {
+    console.log(prompt);
+  }, [prompt]);
   return (
-    <main className='bg-white w-[80%] m-auto'>
+    <main className='bg-white  flex justify-center flex-col w-[80%] m-auto'>
       <h1 className='text-4xl font-bold'>Reko</h1>
       <input 
         onChange={(e) => setInput(e.target.value)}
         value={input}
-        className='border-2 border-black rounded-xl px-4 py-2 mt-8 w-full' 
+        className='rounded-xl w-full px-4 py-2 mt-8 border-2 border-black' 
         type="text" 
       />
-      <p className='text-xl font-medium'>{generatedAnswer}</p>
-      <div className='w-[50%] m-auto'>
+      <div className='w-[50%] mx-auto'>
         {!loading && (
           <button
-            className="bg-black rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
+            className="rounded-xl sm:mt-10 hover:bg-black/80 w-full px-4 py-2 mt-8 font-medium text-white bg-black"
             onClick={(e) => generateAnswer(e)}
           >
             Hit me &rarr;
@@ -151,8 +213,8 @@ export default function Home() {
       </div>
 
       <div>
-        {tracks?.map((track: any, id) => (
-          <Track key={id} track={track} />
+        {tracks.map((track, id) => (
+          <Track key={id} track={track} onLike={handleLike} />
         ))}
       </div>
     </main>

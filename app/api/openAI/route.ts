@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     model: "text-davinci-003",
     prompt,
     max_tokens: 100,
-    temperature: 0.5,
+    temperature: 1.5,
   });
 
   const data = res.data;
