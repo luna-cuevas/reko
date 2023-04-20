@@ -1,38 +1,50 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Reko 🎵
 
-## Getting Started
+Reko is a music recommendation app that uses OpenAI's GPT-3 to generate song suggestions based on the user's input. Whether you're in a specific mood, feeling a certain way, or have a specific music query, Reko has got you covered! The app provides a list of songs that match your criteria, allowing you to listen to previews, access the songs on Spotify, and like songs to improve future recommendations.
 
-First, run the development server:
+## Features 🌟
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+- 🎼 Song Recommendations: Get song recommendations based on your mood, feeling, or specific query.
+- 🔊 Preview Playback: Listen to previews of each recommended track.
+- 🔗 Spotify Integration: Access full songs on Spotify with a single click.
+- ❤️ Like Songs: Like songs to receive better music suggestions.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack 💻
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- React.js: Front-end library for building user interfaces.
+- Next.js: Framework for server-rendered React applications.
+- TypeScript: Static type checking for JavaScript.
+- OpenAI's GPT-3 API: Language model for generating song suggestions.
+- Spotify API: Music streaming platform API for song details and previews.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+## Getting Started 🚀
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- Node.js installed on your system.
+- An OpenAI API key for GPT-3.
+- A Spotify Client ID and Client Secret.
 
-## Learn More
+### Running the App Locally
 
-To learn more about Next.js, take a look at the following resources:
+1. Clone the repository to your local machine: git clone https://github.com/your-username/reko.git
+2. Navigate to the project directory: cd reko
+3. Install dependencies: npm install
+4. Create a `.env` file in the project root and add the following environment variables with your own values: NEXT_PUBLIC_SPOTIFY_CLIENT_ID=<Your Spotify Client ID> NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET=<Your Spotify Client Secret> NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN=<Your Spotify Refresh Token> OPENAI_API_KEY=<Your OpenAI API Key>
+5. Start the development server: npm run dev
+6. Open your browser and go to `http://localhost:3000` to access the app.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Usage 🎧
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+1. Enter your mood, feeling, or specific query into the input field.
+2. Click the "Hit me" button to get song recommendations.
+3. Enjoy the recommendations, listen to previews, access Spotify, and like songs!
 
-## Deploy on Vercel
+## License 📄
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is licensed under the MIT License.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Acknowledgments 🙏
+
+- Special thanks to OpenAI for their incredible GPT-3 language model.
+- Thanks to Spotify for their amazing music streaming platform and API.
