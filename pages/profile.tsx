@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { Session } from "@supabase/supabase-js";
 import Link from "next/link";
+import { useStateContext } from "../context/StateContext";
 
 type LikedSong = {
   user_id: string;
@@ -9,22 +10,32 @@ type LikedSong = {
   songName: string;
 };
 
+type Artist = {
+  name: string;
+};
+
+type Album = {
+  name: string;
+  uri: string;
+  images: { url: string }[]; // Add the images property to the Album type
+};
+
+type TrackData = {
+  name: string;
+  artists: Artist[];
+  album: Album;
+  uri: string;
+  preview_url: string;
+};
+
 const profile = () => {
-  const [session, setSession] = useState<Session | null>(null);
   const [likedSongs, setLikedSongs] = useState<LikedSong[]>([]);
+  const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    const sessionStr = localStorage.getItem("supabaseSession");
+    const sessionObj = sessionStr && JSON.parse(sessionStr);
+    setSession(sessionObj);
   }, []);
 
   useEffect(() => {
@@ -35,13 +46,15 @@ const profile = () => {
           .select("*")
           .eq("user_id", session.user.id);
 
+        // console.log("likedSongs", likedSongs);
+
         if (error) {
           console.error("Error fetching liked songs:", error.message);
           return;
         }
 
         // Update the likedSongs state variable
-        if (likedSongs) {
+        if (likedSongs && likedSongs.length > 0) {
           setLikedSongs(likedSongs as LikedSong[]);
         } else {
           setLikedSongs([]);

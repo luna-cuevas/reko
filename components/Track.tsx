@@ -1,5 +1,6 @@
+import React from "react";
 import Link from "next/link";
-import React, { useRef } from "react";
+import { useStateContext } from "../context/StateContext";
 
 type Artist = {
   name: string;
@@ -19,26 +20,50 @@ type TrackProps = {
     uri: string;
     preview_url: string;
   };
-  onLike: (artists: string[], songName: string) => void;
-  isLiked: boolean;
+  playTrack: (track: {}) => void; // New prop for playTrack function
 };
 
-const Track: React.FC<TrackProps> = ({ track, onLike, isLiked }) => {
+const Track: React.FC<TrackProps> = ({ track, playTrack }) => {
   const { name, artists, album, preview_url, uri } = track;
   const { images } = album;
-
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const handlePlayClick = () => {
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
-  };
+  const { state, setState } = useStateContext();
+  const { session } = state;
 
   const handleLikeClick = () => {
+    console.log("Like button clicked");
     const songName = name;
     const artistsArray = artists.map((artist) => artist.name);
-    onLike(artistsArray, songName);
+    toggleLikedSong(artistsArray, songName);
+  };
+
+  const isLiked = state.likedSongs?.some(
+    (song) =>
+      JSON.stringify(song.artists) ===
+        JSON.stringify(track.artists.map((artist: any) => artist.name)) &&
+      song.songName === track.name
+  );
+
+  const toggleLikedSong = async (artists: string[], songName: string) => {
+    if (!session) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/likedSongs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: session.user.id, artists, songName }),
+      });
+
+      const data = await response.json();
+      setState({
+        ...state,
+        likedSongs: data.likedSongs,
+      });
+      console.log("liked songs", data.likedSongs);
+    } catch (error) {
+      console.error("Error adding liked song:", error);
+    }
   };
 
   return (
@@ -53,13 +78,20 @@ const Track: React.FC<TrackProps> = ({ track, onLike, isLiked }) => {
         )}
         <div className="pl-4">
           <p>{name}</p>
-          <p>{artists.map((artist) => artist.name).join(", ")}</p>
+          <p>
+            {artists
+              .map((artist) => artist.name)
+              .join(", ")
+              .slice(0, 100)}
+          </p>
         </div>
       </div>
       <div className="sm:justify-evenly sm:w-1/2 flex justify-center">
-        <audio ref={audioRef} src={preview_url} preload="none" />
-        <button className="border-2 border-blue-400" onClick={handlePlayClick}>
-          Preview
+        <button
+          className="border-2 border-blue-400"
+          onClick={() => playTrack(track)}>
+          {state.isPlaying && state.audioURL == uri ? "Pause" : "Play"}{" "}
+          {/* Use isPlaying state to toggle between Pause and Preview */}
         </button>
         <Link className="flex" href={uri}>
           <img

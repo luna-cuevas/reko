@@ -1,21 +1,28 @@
-import { supabase } from "../../../lib/supabaseClient";
-import { NextResponse, NextRequest } from "next/server";
+import { supabase } from "../../lib/supabaseClient";
+import { NextApiRequest, NextApiResponse } from "next";
 
 type LikedSongData = {
-  userId: string;
+  user_id: string;
   artists: string[];
   songName: string;
 };
 
-export async function POST(req: NextRequest) {
-  const { userId, artists, songName } = (await req.json()) as LikedSongData;
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    // Only handle POST requests
+    return res.status(405).json({ message: "Method Not Allowed" });
+  }
 
+  const { user_id, artists, songName } = req.body as LikedSongData;
   try {
     // Check if the song is already liked by the user
     const { data: existingSong, error: existingSongError } = await supabase
       .from("liked_songs")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user_id)
       .contains("artists", artists)
       .eq("songName", songName);
 
@@ -28,41 +35,50 @@ export async function POST(req: NextRequest) {
       const { error: deleteError } = await supabase
         .from("liked_songs")
         .delete()
-        .eq("user_id", userId)
+        .eq("user_id", user_id)
         .contains("artists", artists)
         .eq("songName", songName);
 
       if (deleteError) {
         throw deleteError;
       }
+
+      // Get the updated liked songs
       const { data: updatedLikedSongs } = await supabase
         .from("liked_songs")
         .select("*")
-        .eq("user_id", userId);
-      return NextResponse.json(
-        { message: "Liked song deleted", likedSongs: updatedLikedSongs },
-        { status: 200 }
-      );
+        .eq("user_id", user_id);
+
+      // Return the updated liked songs
+      return res.status(200).json({
+        message: "Liked song deleted",
+        likedSongs: updatedLikedSongs,
+      });
     } else {
       // Insert the new liked song
       const { data, error } = await supabase
         .from("liked_songs")
-        .insert([{ user_id: userId, artists, songName }])
+        .insert([{ user_id: user_id, artists, songName }])
         .single();
 
       if (error) {
         throw error;
       }
+
+      // Get the updated liked songs
       const { data: updatedLikedSongs } = await supabase
         .from("liked_songs")
         .select("*")
-        .eq("user_id", userId);
-      return NextResponse.json(
-        { message: "Liked song added", data, likedSongs: updatedLikedSongs },
-        { status: 200 }
-      );
+        .eq("user_id", user_id);
+
+      // Return the updated liked songs
+      return res.status(200).json({
+        message: "Liked song added",
+        data,
+        likedSongs: updatedLikedSongs,
+      });
     }
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return res.status(500).json({ error: error.message });
   }
 }
