@@ -69,52 +69,42 @@ const Track: React.FC<TrackProps> = ({ track, playTrack, index }) => {
   };
 
   return (
-    <div className="flex flex-col border-b-2 border-[#4f4f4f3c] w-full mx-auto sm:flex-row justify-evenly py-4  my-0 sm:max-h-[100px] ">
-      <div className="sm:w-1/2 flex justify-start">
-        <p className="pr-2 my-auto text-center">{index + 1}</p>
-        {images.length > 0 && (
-          <img className=" h-full" src={images[0].url} alt="Album cover" />
-        )}
-        <div className="pl-4 my-auto">
-          <p>{name}</p>
-          <p>
-            {artists
-              .map((artist) => artist.name)
-              .join(", ")
-              .slice(0, 100)}
-          </p>
+    <button onClick={() => playTrack(track)}>
+      <div className="flex  border-b-2 border-[#4f4f4f3c] w-full mx-auto  justify-between py-4  my-0 sm:max-h-[100px] ">
+        <div className="lg:w-1/2 flex justify-start w-10/12">
+          <p className="pr-2 my-auto">{index + 1}</p>
+          {images.length > 0 && (
+            <img
+              className="object-contain w-[15%] sm:w-auto h-full my-auto"
+              src={images[0].url}
+              alt="Album cover"
+            />
+          )}
+          <div className="pl-4 my-auto text-left">
+            <p>{name}</p>
+            <p>
+              {artists
+                .map((artist) => artist.name)
+                .join(", ")
+                .slice(0, 100)}
+            </p>
+          </div>
+        </div>
+        <div className="sm:justify-evenly ml-[4%] sm:ml-0 sm:my-auto w-fit sm:gap-0 flex gap-8 mt-6">
+          <div onClick={handleLikeClick}>
+            <img
+              className="max-h-[30px] my-auto h-full"
+              src={
+                isLiked
+                  ? "/images/heart-icon-red.png"
+                  : "/images/heart-icon.png"
+              }
+              alt=""
+            />
+          </div>
         </div>
       </div>
-      <div className="sm:justify-evenly sm:w-1/3 flex justify-center">
-        <button className="" onClick={() => playTrack(track)}>
-          <img
-            className="max-h-[30px] my-auto h-full"
-            src={
-              state.isPlaying && state.audioURL == uri
-                ? "/images/pause.png"
-                : "/images/play.png"
-            }
-            alt=""
-          />
-        </button>
-        <Link className="flex" href={uri}>
-          <img
-            className="max-h-[30px] my-auto h-full"
-            src="/images/spotify-icon.png"
-            alt=""
-          />
-        </Link>
-        <button onClick={handleLikeClick}>
-          <img
-            className="max-h-[30px] my-auto h-full"
-            src={
-              isLiked ? "/images/heart-icon-red.png" : "/images/heart-icon.png"
-            }
-            alt=""
-          />
-        </button>
-      </div>
-    </div>
+    </button>
   );
 };
 
