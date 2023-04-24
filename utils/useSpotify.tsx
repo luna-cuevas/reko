@@ -58,7 +58,10 @@ export const useSpotify = (): UseSpotifyHook => {
 
   const authorizeWithSpotify = () => {
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-    const redirectUri = "http://localhost:3000/spotifyCallback/";
+    const redirectUri =
+      process.env.NODE_ENV !== "production"
+        ? "http://localhost:3000/spotifyCallback/"
+        : "https://reko.vercel.app/spotifyCallback/";
     const scopes = ["streaming", "user-read-email", "user-read-private"];
 
     // Join the scopes with a space separator and encode the parameter
