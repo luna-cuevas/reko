@@ -51,7 +51,6 @@ export default function Home() {
   };
 
   const handleSession = (session: any) => {
-    console.log("Handling session", session);
     const currentDate = new Date();
 
     // Format the date and time into "dd/mm/yyyy hour:minutes"
@@ -72,9 +71,10 @@ export default function Home() {
       session: session,
       sessionTime: sessionTime,
     });
-    localStorage.setItem("supabaseSession", JSON.stringify(session));
+    localStorage.setItem("session", JSON.stringify(session));
 
     setLoading(false);
+    router.push("/");
   };
 
   const generateImage = async (genreString: any) => {
@@ -111,7 +111,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const storedSessionStr = localStorage.getItem("supabaseSession");
+    const storedSessionStr = localStorage.getItem("session");
+
     // If imageUrl already exists in localStorage, don't call the API again
     const storedImageUrl = localStorage.getItem("imageUrl");
     if (storedImageUrl) {
@@ -120,15 +121,15 @@ export default function Home() {
       console.log("Image URL already exists in localStorage");
     }
 
-    if (storedSessionStr && storedSessionStr !== "{}") {
-      const storedSession = JSON.parse(storedSessionStr);
-      // console.log("Stored session", storedSession);
-      handleSession(storedSession);
+    if (storedSessionStr !== null && storedSessionStr !== "{}") {
+      console.log("Session exists in localStorage");
+      handleSession(storedSessionStr);
     } else {
+      console.log("No session in localStorage");
       supabase.auth.getSession().then((currentSession) => {
-        // console.log("Current session", currentSession);
         handleSession(currentSession.data.session);
       });
+      router.push("/login");
     }
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -147,6 +148,12 @@ export default function Home() {
 
     return () => authListener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (state.session !== null) {
+      router.push("/");
+    }
+  }, [state.session]);
 
   useEffect(() => {
     if (sanitizedTracks !== "" && state.devCredentials !== null) {
