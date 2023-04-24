@@ -5,10 +5,13 @@ type StateType = {
   isPlaying: boolean;
   audioURL: string;
   tracks: any[];
-  spotifyAccessToken: string;
+  devCredentials: string;
   session: any;
   likedSongs: any[];
   track: object;
+  sessionTime: string;
+  newTracks: any[];
+  userAuthorizationCode: string;
 };
 
 type StateContextType = {
@@ -20,10 +23,13 @@ const initialState: StateType = {
   isPlaying: false,
   audioURL: "",
   tracks: [],
-  spotifyAccessToken: "",
+  devCredentials: "",
   session: {},
   likedSongs: [],
   track: {},
+  sessionTime: "",
+  newTracks: [],
+  userAuthorizationCode: "",
 };
 
 const StateContext = createContext<StateContextType | undefined>(undefined);

@@ -1,5 +1,6 @@
 export type Artist = {
   name: string;
+  id: string;
 };
 
 export type Album = {

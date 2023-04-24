@@ -20,10 +20,12 @@ type TrackProps = {
     uri: string;
     preview_url: string;
   };
+  index: number;
+
   playTrack: (track: {}) => void; // New prop for playTrack function
 };
 
-const Track: React.FC<TrackProps> = ({ track, playTrack }) => {
+const Track: React.FC<TrackProps> = ({ track, playTrack, index }) => {
   const { name, artists, album, preview_url, uri } = track;
   const { images } = album;
   const { state, setState } = useStateContext();
@@ -67,16 +69,13 @@ const Track: React.FC<TrackProps> = ({ track, playTrack }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row p-4 my-2 sm:max-h-[100px] border-2 border-black">
+    <div className="flex flex-col border-b-2 border-[#4f4f4f3c] w-full mx-auto sm:flex-row justify-evenly py-4  my-0 sm:max-h-[100px] ">
       <div className="sm:w-1/2 flex justify-start">
+        <p className="pr-2 my-auto text-center">{index + 1}</p>
         {images.length > 0 && (
-          <img
-            className="h-full max-h-[40px]"
-            src={images[0].url}
-            alt="Album cover"
-          />
+          <img className=" h-full" src={images[0].url} alt="Album cover" />
         )}
-        <div className="pl-4">
+        <div className="pl-4 my-auto">
           <p>{name}</p>
           <p>
             {artists
@@ -86,12 +85,17 @@ const Track: React.FC<TrackProps> = ({ track, playTrack }) => {
           </p>
         </div>
       </div>
-      <div className="sm:justify-evenly sm:w-1/2 flex justify-center">
-        <button
-          className="border-2 border-blue-400"
-          onClick={() => playTrack(track)}>
-          {state.isPlaying && state.audioURL == uri ? "Pause" : "Play"}{" "}
-          {/* Use isPlaying state to toggle between Pause and Preview */}
+      <div className="sm:justify-evenly sm:w-1/3 flex justify-center">
+        <button className="" onClick={() => playTrack(track)}>
+          <img
+            className="max-h-[30px] my-auto h-full"
+            src={
+              state.isPlaying && state.audioURL == uri
+                ? "/images/pause.png"
+                : "/images/play.png"
+            }
+            alt=""
+          />
         </button>
         <Link className="flex" href={uri}>
           <img

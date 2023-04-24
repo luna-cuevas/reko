@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { OpenAIAPIResponse } from "../components/types";
 
 type UseOpenAIHook = {
-  generateAnswer: (input: string, prompt: string) => Promise<void>;
+  generateAnswer: (input: string, prompt: string, e: any) => Promise<void>;
   generatedAnswer: string;
   loading: boolean;
   sanitizedTracks: string;
@@ -17,7 +17,8 @@ export const generateAIResponse = (): UseOpenAIHook => {
   // Other state variables and logic related to OpenAI
   const [sanitizedTracks, setSanitizedTracks] = useState("");
 
-  const generateAnswer = async (input: string, prompt: string) => {
+  const generateAnswer = async (input: string, prompt: string, e: any) => {
+    e.preventDefault();
     if (input !== "") {
       setGeneratedAnswer("");
       setLoading(true);

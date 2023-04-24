@@ -18,13 +18,16 @@ export default function Home() {
   const [input, setInput] = useState("");
   const router = useRouter();
   const session = state.session;
+  const [backgroundColor, setBackgroundColor] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageIsLoading, setImageIsLoading] = useState(true);
 
   const {
-    spotifyAccessToken,
     searchForSong,
     showSpotifyLogin,
     playTrack,
     authorizeWithSpotify,
+    genreString,
   } = useSpotify();
 
   const { sanitizedTracks, generateAnswer } = generateAIResponse();
@@ -48,25 +51,79 @@ export default function Home() {
 
   const handleSession = (session: any) => {
     console.log("Handling session", session);
+    const currentDate = new Date();
+
+    // Format the date and time into "dd/mm/yyyy hour:minutes"
+    const formattedDate = currentDate.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const formattedTime = currentDate.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const sessionTime = `${formattedDate} ${formattedTime}`;
+
     setState({
       ...state,
       session: session,
+      sessionTime: sessionTime,
     });
     localStorage.setItem("supabaseSession", JSON.stringify(session));
 
     setLoading(false);
   };
 
+  const generateImage = async (genreString: any) => {
+    // Construct the prompt using the genres to describe the image
+    const prompt = `An abstract art image that represents the genres: ${genreString}`;
+    setImageIsLoading(true);
+
+    try {
+      // Make a request to the DALL·E 2.0 API to generate the image
+      console.log("Calling DALL·E API...");
+      const response = await fetch("/api/dalleAI", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await response.json();
+
+      // Set the URL of the generated image
+      setImageUrl(data.imageUrl);
+
+      // Save the imageUrl in localStorage
+      localStorage.setItem("imageUrl", data.imageUrl);
+    } catch (error) {
+      console.error("Error during DALL·E API call:", error);
+    } finally {
+      setImageIsLoading(false);
+      console.log("DALL·E API call finished");
+    }
+  };
+
   useEffect(() => {
     const storedSessionStr = localStorage.getItem("supabaseSession");
+    // If imageUrl already exists in localStorage, don't call the API again
+    const storedImageUrl = localStorage.getItem("imageUrl");
+    if (storedImageUrl) {
+      setImageUrl(storedImageUrl);
+      setImageIsLoading(false);
+      console.log("Image URL already exists in localStorage");
+    }
 
     if (storedSessionStr && storedSessionStr !== "{}") {
       const storedSession = JSON.parse(storedSessionStr);
-      console.log("Stored session", storedSession);
+      // console.log("Stored session", storedSession);
       handleSession(storedSession);
     } else {
       supabase.auth.getSession().then((currentSession) => {
-        console.log("Current session", currentSession);
+        // console.log("Current session", currentSession);
         handleSession(currentSession.data.session);
       });
     }
@@ -75,6 +132,15 @@ export default function Home() {
       (event, session) => {
         if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
           handleSession(session as Session);
+          // clear the state and localStorage
+          setState({
+            ...state,
+            session: null,
+            sessionTime: "",
+            likedSongs: [],
+            tracks: [],
+          });
+          localStorage.clear();
         }
       }
     );
@@ -88,18 +154,16 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (sanitizedTracks !== "") {
+    if (sanitizedTracks !== "" && state.devCredentials !== null) {
       const tracksArray = sanitizedTracks.split("\n");
       tracksArray.forEach((item, index) => {
         if (item == "" || item == "" || item == " ") {
           tracksArray.splice(index, 1);
         }
       });
-      tracksArray.forEach((item, index) => {
-        if (item !== "" || item !== "") {
-          searchForSong(item);
-        }
-      });
+      searchForSong(tracksArray);
+      console.log("genres", genreString);
+      generateImage(genreString);
     }
   }, [sanitizedTracks]);
 
@@ -136,6 +200,14 @@ export default function Home() {
     const { error } = await supabase.auth.signOut();
     localStorage.clear();
     router.push("/login");
+    // clear session from state
+    setState({
+      ...state,
+      session: null,
+      sessionTime: "",
+      likedSongs: [],
+      tracks: [],
+    });
 
     if (error) {
       console.error("Error signing out:", error.message);
@@ -143,65 +215,99 @@ export default function Home() {
   };
 
   return (
-    <main className="bg-white  flex justify-center flex-col w-[80%] m-auto">
-      <div>
-        <h1 className="text-4xl font-bold">Reko</h1>
-        <div>
-          <Link href="/profile">
-            <button className="text-black">Profile</button>
-          </Link>
+    <main
+      style={{
+        backgroundColor: imageIsLoading ? "#07173e" : "transparent",
+        transition: "background-color 2s ease-in-out",
+      }}
+      className="h-fit flex flex-col justify-center min-h-screen text-white bg-transparent">
+      {imageIsLoading ? (
+        <div className="bg-[#07173e] transition-opacity opacity-100 -z-10 fixed top-0 left-0 w-full h-full" />
+      ) : (
+        <div className="-z-10 fixed top-0 left-0 w-full h-full transition-all opacity-100">
+          <img
+            src={imageUrl || ""}
+            alt="Generated image"
+            className="object-cover w-full h-full"
+            onLoad={() => setImageIsLoading(false)}
+          />
         </div>
-      </div>
+      )}
 
       {state.session ? (
-        <>
-          <input
-            onChange={(e) => setInput(e.target.value)}
-            value={input}
-            className="rounded-xl w-full px-4 py-2 mt-8 border-2 border-black"
-            type="text"
-          />
-          <div className="w-[50%] mx-auto">
-            {!loading && (
-              <>
-                <button
-                  className="rounded-xl sm:mt-10 hover:bg-black/80 w-full px-4 py-2 mt-8 font-medium text-white bg-black"
-                  onClick={(e) => generateAnswer(input, prompt)}>
-                  Hit me &rarr;
+        <div className=" flex h-full min-h-screen">
+          <div className="lg:w-3/4 bg-[#07173ef2] md:w-11/12 h-full mx-auto overflow-y-scroll border-x-2 border-[#4f4f4f3c]">
+            <nav className="flex justify-between my-4">
+              <h1 className="ml-6 text-4xl font-bold">Reko</h1>
+              <div className="flex justify-end w-1/3 gap-10 mr-6 text-white">
+                <button>
+                  <Link href="/profile">Profile</Link>
                 </button>
-                <button
-                  className="rounded-xl sm:mt-10 hover:bg-black/80 w-full px-4 py-2 mt-8 font-medium text-white bg-black"
-                  onClick={signOut}>
+                <button className="" onClick={signOut}>
                   Sign Out
                 </button>
-              </>
-            )}
-            {loading && (
-              <button
-                className="bg-[#6f6f6f] rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
-                disabled></button>
-            )}
-          </div>
-
-          {spotifyAccessToken ? (
-            <div>
-              <MediaPlayer
-                isPlaying={state.isPlaying}
-                audioURL={state.audioURL}
-                playTrack={playTrack}
-              />
+              </div>
+            </nav>
+            <div className="md:p-20 border-y-2 border-[#4f4f4f3c]">
+              <div className="md:w-1/2 mx-auto">
+                <label className="m-auto text-xl" htmlFor="query">
+                  Provide a mood, feeling, song, or artist.
+                </label>
+                <input
+                  onChange={(e) => setInput(e.target.value)}
+                  value={input}
+                  name="query"
+                  className="rounded-md bg-[#ffffff42] mt-2  w-full px-4 py-2  border-[1px] border-white"
+                  type="text"
+                />
+              </div>
+              <div className="md:w-1/4 mx-auto">
+                {!loading && (
+                  <>
+                    <button
+                      className="rounded-xl sm:mt-10 hover:bg-white/80 w-full px-4 py-2 mt-8 font-medium text-black bg-white"
+                      onClick={(e) => generateAnswer(input, prompt, e)}>
+                      Search &rarr;
+                    </button>
+                  </>
+                )}
+                {loading && (
+                  <button
+                    className="bg-[#6f6f6f] rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
+                    disabled></button>
+                )}
+              </div>
             </div>
-          ) : (
-            showSpotifyLogin && (
-              <SpotifyLoginPopUp authorizeWithSpotify={authorizeWithSpotify} />
-            )
-          )}
-          <div>
-            {state.tracks.map((track, id) => {
-              return <Track key={id} track={track} playTrack={playTrack} />;
-            })}
+
+            {state.userAuthorizationCode ? (
+              <div>
+                <MediaPlayer
+                  isPlaying={state.isPlaying}
+                  audioURL={state.audioURL}
+                  playTrack={playTrack}
+                />
+              </div>
+            ) : (
+              showSpotifyLogin && (
+                <SpotifyLoginPopUp
+                  authorizeWithSpotify={authorizeWithSpotify}
+                />
+              )
+            )}
+            <div className="flex flex-col">
+              {state.tracks.map((track, id) => {
+                return (
+                  <Track
+                    key={id}
+                    track={track}
+                    index={id}
+                    playTrack={playTrack}
+                  />
+                );
+              })}
+            </div>
           </div>
-        </>
+        </div>
       ) : (
         loading && <div>Loading...</div>
       )}

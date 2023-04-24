@@ -9,7 +9,7 @@ const spotifyLoginPopUp: React.FC<SpotifyLoginPopUpProps> = ({
 }) => {
   return (
     // a pop that hovers over the page up asking the user if they want to login to spotify
-    <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
+    <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full text-black bg-black bg-opacity-50">
       <div className="h-1/2 flex flex-col items-center justify-center w-1/2 bg-white">
         <h1 className="text-2xl font-bold">Login to Spotify</h1>
         <p className="text-lg">To use this app, you need to login to Spotify</p>

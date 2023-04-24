@@ -15,10 +15,10 @@ const SpotifyCallback = () => {
     // Store access token in state/context
     setState((prevState) => ({
       ...prevState,
-      spotifyAccessToken: accessToken,
+      userAuthorizationCode: accessToken,
     }));
 
-    localStorage.setItem("spotifyAccessToken", accessToken);
+    localStorage.setItem("userAuthorizationCode", accessToken);
 
     if (accessToken) {
       router.push("/");

@@ -9,26 +9,27 @@ import {
 
 // Define the TypeScript type for the useSpotify hook's return value.
 type UseSpotifyHook = {
-  token: string | null;
-  searchForSong: (sanitizedTracks: string) => Promise<void>;
+  searchForSong: (tracksArray: string[]) => Promise<void>;
   playTrack: (track: any) => void;
   refreshAccessToken: () => Promise<void>;
-  spotifyAccessToken: string;
+  userAuthorizationCode: string;
   authorizeWithSpotify: () => void;
   showSpotifyLogin: boolean;
+  genreString: string | "";
   // Other functions and state variables related to Spotify
 };
 
 export const useSpotify = (): UseSpotifyHook => {
   // State variable to store the Spotify access token.
-  const [token, setToken] = useState<string | null>(null);
+  const [devCredentials, setDevCredentials] = useState<string | null>(null);
   // Other state variables and logic related to Spotify.
   const isSDKReady = useSpotifySDK();
-  const [spotifyAccessToken, setSpotifyAccessToken] = useState("");
+  const [userAuthorizationCode, setUserAuthorizationCode] = useState("");
   const [player, setPlayer] = useState<any>(null);
   const [deviceId, setDeviceId] = useState(null);
   const [showSpotifyLogin, setShowSpotifyLogin] = useState(false);
   const [currentTrackUri, setCurrentTrackUri] = useState<string | null>(null);
+  const [genreString, setGenreString] = useState("");
 
   const { state, setState } = useStateContext();
 
@@ -36,47 +37,23 @@ export const useSpotify = (): UseSpotifyHook => {
     localStorage.setItem("allSongs", JSON.stringify(tracks));
   };
 
-  const handleSpotifyAccessToken = (accessToken: string) => {
+  const handleUserAuthorizationCode = (userAuthorizationCode: string) => {
     setState({
       ...state,
-      spotifyAccessToken: accessToken,
+      userAuthorizationCode: userAuthorizationCode,
     });
-    setSpotifyAccessToken(accessToken);
+    setUserAuthorizationCode(userAuthorizationCode);
 
-    localStorage.setItem("spotifyAccessToken", accessToken);
+    localStorage.setItem("userAuthorizationCode", userAuthorizationCode);
   };
 
   // useEffect hook to handle the initial fetching of the Spotify access token.
   useEffect(() => {
-    const accessToken = localStorage.getItem("spotifyAccessToken");
+    const userAuthorizationCode = localStorage.getItem("userAuthorizationCode");
 
-    if (accessToken) {
-      handleSpotifyAccessToken(accessToken);
+    if (userAuthorizationCode !== null) {
+      handleUserAuthorizationCode(userAuthorizationCode);
     }
-    const response = fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization:
-          "Basic " +
-          Buffer.from(
-            process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID +
-              ":" +
-              process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET
-          ).toString("base64"),
-      },
-      body: "grant_type=client_credentials",
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        // console.log(data)
-        setToken(data.access_token);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-
-    // console.log(token)
   }, []);
 
   const authorizeWithSpotify = () => {
@@ -98,19 +75,16 @@ export const useSpotify = (): UseSpotifyHook => {
   };
 
   useEffect(() => {
-    if (!isSDKReady || !spotifyAccessToken) return;
-
-    console.log("access token", spotifyAccessToken);
+    if (!isSDKReady || !userAuthorizationCode) return;
 
     const playerInstance = new window.Spotify.Player({
       name: "Reko Player",
-      getOAuthToken: (cb: any) => cb(spotifyAccessToken),
+      getOAuthToken: (cb: any) => cb(userAuthorizationCode),
     });
 
     playerInstance.connect();
 
     playerInstance.on("ready", ({ device_id }: any) => {
-      console.log("Device ID:", device_id);
       setPlayer(playerInstance);
       setDeviceId(device_id);
     });
@@ -121,33 +95,124 @@ export const useSpotify = (): UseSpotifyHook => {
       }
     };
   }, [isSDKReady]);
+  // Function to refresh the Spotify access token.
+  const refreshAccessToken = async () => {
+    const authHeader =
+      "Basic " +
+      Buffer.from(
+        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID +
+          ":" +
+          process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET
+      ).toString("base64");
+
+    const response = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: authHeader,
+      },
+      body: `grant_type=refresh_token&refresh_token=${process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN}`,
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const accessToken = data.access_token;
+      setState({ ...state, devCredentials: accessToken });
+      setDevCredentials(accessToken);
+      localStorage.setItem("devCredentials", accessToken);
+      console.log("Access token refreshed");
+      // make search for song function request again with new access token
+      // const savedSanitizedTrack = localStorage.getItem('savedSanitizedTrack')
+      // if (savedSanitizedTrack) {
+      //   searchForSong(savedSanitizedTrack)
+      // }
+    } else {
+      console.error("Failed to refresh access token");
+    }
+  };
 
   useEffect(() => {
-    if (token) {
+    if (devCredentials) {
       const interval = setInterval(() => {
         refreshAccessToken();
         console.log("Refreshing access token");
       }, 3600000);
       return () => clearInterval(interval);
     }
-  }, [token]);
+  }, [devCredentials]);
 
   // Function to search for a song on Spotify based on sanitized track information.
-  const searchForSong = async (sanitizedTracks: string) => {
-    const response = await fetch(
-      `https://api.spotify.com/v1/search?q=${sanitizedTracks}&type=track&limit=3`,
-      {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
+  const searchForSong = async (tracksArray: any) => {
+    localStorage.setItem("savedSanitizedTrack", tracksArray);
+    const devCredentials =
+      localStorage.getItem("devCredentials") || state.devCredentials;
+
+    if (!devCredentials) {
+      console.error("Access token not available. Refreshing access token.");
+      await refreshAccessToken();
+      return;
+    }
+
+    tracksArray.forEach(async (item: any, index: number) => {
+      const response = await fetch(
+        `https://api.spotify.com/v1/search?q=${item}&type=track&limit=5`,
+        {
+          headers: {
+            Authorization: "Bearer " + devCredentials,
+          },
+        }
+      );
+
+      // Check for error response from Spotify API and refresh the access token.
+      if (!response.ok) {
+        console.error(
+          "Error in searchForSong API call. Refreshing access token."
+        );
+        await refreshAccessToken();
+        return;
       }
-    );
 
-    const data: SpotifyAPIResponse = await response.json();
+      const data: SpotifyAPIResponse = await response.json();
 
-    const newTracks = [...state.tracks, ...data.tracks.items];
-    setState({ ...state, tracks: newTracks });
-    saveAllSongsToLocalStorage(newTracks); // Save to local storage
+      const newTracks = data.tracks?.items || [];
+      const allTracks = [...state.tracks, ...newTracks];
+      setState({ ...state, newTracks: newTracks, tracks: allTracks });
+      saveAllSongsToLocalStorage(allTracks); // Save to local storage
+
+      // Get a list of artist IDs from the tracks.
+      const artistIds = new Set();
+      newTracks.forEach((track) => {
+        track.artists.forEach((artist) => {
+          artistIds.add(artist.id);
+        });
+      });
+
+      // Retrieve artist information using the "Get Several Artists" endpoint.
+      const artistResponse = await fetch(
+        `https://api.spotify.com/v1/artists?ids=${Array.from(artistIds).join(
+          ","
+        )}`,
+        {
+          headers: {
+            Authorization: "Bearer " + devCredentials,
+          },
+        }
+      );
+      const artistData = await artistResponse.json();
+
+      // Accumulate all genres from the retrieved artists.
+      let allGenres: string[] = [];
+      artistData.artists.forEach((artist: any) => {
+        allGenres.push(...artist.genres);
+      });
+
+      // Obtain unique genres and join them into a single string.
+      const uniqueGenres = Array.from(new Set(allGenres));
+      const genresString = uniqueGenres.join(", ");
+
+      // Use genresString to send to DALL·E API or perform other actions.
+      setGenreString(genresString);
+    });
   };
 
   // Function to play or pause a track on Spotify.
@@ -218,44 +283,13 @@ export const useSpotify = (): UseSpotifyHook => {
     }
   };
 
-  // Function to refresh the Spotify access token.
-  const refreshAccessToken = async () => {
-    const authHeader =
-      "Basic " +
-      Buffer.from(
-        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID +
-          ":" +
-          process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET
-      ).toString("base64");
-
-    const response = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: authHeader,
-      },
-      body: `grant_type=refresh_token&refresh_token=${process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN}`,
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const accessToken = data.access_token;
-      console.log("Access Token:", accessToken);
-      setToken(accessToken);
-    } else {
-      console.error("Failed to refresh access token");
-    }
-  };
-
-  // Return the relevant functions and state variables from the hook.
   return {
-    token,
     searchForSong,
     playTrack,
     refreshAccessToken,
-    spotifyAccessToken,
+    userAuthorizationCode,
     authorizeWithSpotify,
     showSpotifyLogin,
-    // Other functions and state variables related to Spotify.
+    genreString,
   };
 };
