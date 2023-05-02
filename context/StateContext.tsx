@@ -9,9 +9,11 @@ type StateType = {
   session: any;
   likedSongs: any[];
   track: object;
-  sessionTime: string;
+  expiresAt: number;
   newTracks: any[];
   userAuthorizationCode: string;
+  deviceID: any;
+  refreshToken: string;
 };
 
 type StateContextType = {
@@ -27,9 +29,11 @@ const initialState: StateType = {
   session: {},
   likedSongs: [],
   track: {},
-  sessionTime: "",
+  expiresAt: 0,
   newTracks: [],
+  deviceID: "",
   userAuthorizationCode: "",
+  refreshToken: "",
 };
 
 const StateContext = createContext<StateContextType | undefined>(undefined);

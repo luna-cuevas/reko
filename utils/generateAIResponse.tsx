@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { OpenAIAPIResponse } from "../components/types";
 
 type UseOpenAIHook = {
-  generateAnswer: (input: string, prompt: string, e: any) => Promise<void>;
+  generateAnswer: (input: string, prompt: string) => Promise<void>;
   generatedAnswer: string;
   loading: boolean;
   sanitizedTracks: string;
@@ -17,10 +17,8 @@ export const generateAIResponse = (): UseOpenAIHook => {
   // Other state variables and logic related to OpenAI
   const [sanitizedTracks, setSanitizedTracks] = useState("");
 
-  const generateAnswer = async (input: string, prompt: string, e: any) => {
-    e.preventDefault();
+  const generateAnswer = async (input: string, prompt: string) => {
     if (input !== "") {
-      setGeneratedAnswer("");
       setLoading(true);
 
       try {
@@ -36,6 +34,9 @@ export const generateAIResponse = (): UseOpenAIHook => {
 
         const answer: OpenAIAPIResponse = await response.json();
         setGeneratedAnswer(answer.data.choices[0].text);
+        // if (callback) {
+        //   callback(answer.data.choices[0].text);
+        // }
       } catch (error) {
         console.error("Error during OpenAI API call:", error);
       } finally {

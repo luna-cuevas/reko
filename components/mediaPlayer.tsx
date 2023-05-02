@@ -12,36 +12,36 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ playTrack }) => {
   const [progress, setProgress] = useState(0);
   const { state } = useStateContext();
 
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.addEventListener("timeupdate", updateProgress);
-    }
+  // useEffect(() => {
+  //   if (audioRef.current) {
+  //     audioRef.current.addEventListener("timeupdate", updateProgress);
+  //   }
 
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener("timeupdate", updateProgress);
-      }
-    };
-  }, []);
+  //   return () => {
+  //     if (audioRef.current) {
+  //       audioRef.current.removeEventListener("timeupdate", updateProgress);
+  //     }
+  //   };
+  // }, []);
 
-  useEffect(() => {
-    if (audioRef.current) {
-      if (state.isPlaying) {
-        audioRef.current.play();
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [state.isPlaying]);
+  // useEffect(() => {
+  //   if (audioRef.current) {
+  //     if (state.isPlaying) {
+  //       audioRef.current.play();
+  //     } else {
+  //       audioRef.current.pause();
+  //     }
+  //   }
+  // }, [state.isPlaying]);
 
-  const updateProgress = () => {
-    if (audioRef.current) {
-      const { currentTime, duration } = audioRef.current;
-      if (duration) {
-        setProgress((currentTime / duration) * 100);
-      }
-    }
-  };
+  // const updateProgress = () => {
+  //   if (audioRef.current) {
+  //     const { currentTime, duration } = audioRef.current;
+  //     if (duration) {
+  //       setProgress((currentTime / duration) * 100);
+  //     }
+  //   }
+  // };
 
   return (
     <div className="fixed bottom-0 left-0 w-full p-4 bg-[#07173ede] shadow-lg">

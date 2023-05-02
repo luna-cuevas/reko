@@ -11,10 +11,11 @@ import {
 type UseSpotifyHook = {
   searchForSong: (tracksArray: string[]) => Promise<void>;
   playTrack: (track: any) => void;
-  refreshAccessToken: () => Promise<void>;
+  refreshDevToken: () => Promise<void>;
   userAuthorizationCode: string;
   authorizeWithSpotify: () => void;
   showSpotifyLogin: boolean;
+  setShowSpotifyLogin: (showSpotifyLogin: boolean) => void;
   genreString: string | "";
   // Other functions and state variables related to Spotify
 };
@@ -26,7 +27,7 @@ export const useSpotify = (): UseSpotifyHook => {
   const isSDKReady = useSpotifySDK();
   const [userAuthorizationCode, setUserAuthorizationCode] = useState("");
   const [player, setPlayer] = useState<any>(null);
-  const [deviceId, setDeviceId] = useState(null);
+  const [deviceId, setDeviceId] = useState("");
   const [showSpotifyLogin, setShowSpotifyLogin] = useState(false);
   const [currentTrackUri, setCurrentTrackUri] = useState<string | null>(null);
   const [genreString, setGenreString] = useState("");
@@ -34,7 +35,7 @@ export const useSpotify = (): UseSpotifyHook => {
   const { state, setState } = useStateContext();
 
   const saveAllSongsToLocalStorage = (tracks: TrackData[]) => {
-    localStorage.setItem("allSongs", JSON.stringify(tracks));
+    localStorage.setItem("tracks", JSON.stringify(tracks));
   };
 
   const handleUserAuthorizationCode = (userAuthorizationCode: string) => {
@@ -49,9 +50,11 @@ export const useSpotify = (): UseSpotifyHook => {
 
   // useEffect hook to handle the initial fetching of the Spotify access token.
   useEffect(() => {
-    const userAuthorizationCode = localStorage.getItem("userAuthorizationCode");
+    const userAuthorizationCode =
+      localStorage.getItem("userAuthorizationCode") ||
+      state.userAuthorizationCode;
 
-    if (userAuthorizationCode !== null) {
+    if (userAuthorizationCode != "") {
       handleUserAuthorizationCode(userAuthorizationCode);
     }
   }, []);
@@ -78,7 +81,7 @@ export const useSpotify = (): UseSpotifyHook => {
   };
 
   useEffect(() => {
-    if (!isSDKReady || !userAuthorizationCode) return;
+    if (!isSDKReady) return console.log("not ready");
 
     const playerInstance = new window.Spotify.Player({
       name: "Reko Player",
@@ -90,6 +93,16 @@ export const useSpotify = (): UseSpotifyHook => {
     playerInstance.on("ready", ({ device_id }: any) => {
       setPlayer(playerInstance);
       setDeviceId(device_id);
+
+      localStorage.setItem("player", JSON.stringify(playerInstance));
+      console.log("device id", device_id);
+    });
+
+    playerInstance.on("player_state_changed", (state: any) => {
+      if (state) {
+        const trackUri = state.track_window.current_track.uri;
+        setCurrentTrackUri(trackUri);
+      }
     });
 
     return () => {
@@ -98,46 +111,59 @@ export const useSpotify = (): UseSpotifyHook => {
       }
     };
   }, [isSDKReady]);
+
   // Function to refresh the Spotify access token.
-  const refreshAccessToken = async () => {
-    const authHeader =
-      "Basic " +
-      Buffer.from(
-        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID +
-          ":" +
-          process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET
-      ).toString("base64");
+  const refreshDevToken = async () => {
+    // Get the refresh token, client ID, and client secret from environment variables
+    const refresh_token = process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN;
+    const client_id = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+    const client_secret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET; // Use the client secret here
 
-    const response = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: authHeader,
-      },
-      body: `grant_type=refresh_token&refresh_token=${process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN}`,
-    });
+    // Construct the authorization header with the client ID and client secret
+    const authHeader = Buffer.from(client_id + ":" + client_secret).toString(
+      "base64"
+    );
 
-    if (response.ok) {
-      const data = await response.json();
-      const accessToken = data.access_token;
-      setState({ ...state, devCredentials: accessToken });
-      setDevCredentials(accessToken);
-      localStorage.setItem("devCredentials", accessToken);
-      console.log("Access token refreshed");
-      // make search for song function request again with new access token
-      // const savedSanitizedTrack = localStorage.getItem('savedSanitizedTrack')
-      // if (savedSanitizedTrack) {
-      //   searchForSong(savedSanitizedTrack)
-      // }
-    } else {
-      console.error("Failed to refresh access token");
+    try {
+      const response = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: "Basic " + authHeader, // Use the Basic authorization header
+        },
+        body: `grant_type=refresh_token&refresh_token=${refresh_token}`, // Use the refresh token from environment variables
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const accessToken = data.access_token;
+        setState({ ...state, devCredentials: accessToken });
+        setDevCredentials(accessToken);
+        localStorage.setItem("devCredentials", accessToken);
+        console.log("dev token refreshed", accessToken);
+      } else {
+        console.error("Failed to refresh access token");
+      }
+    } catch (error: any) {
+      console.error("Error refreshing access token:", error.message);
     }
   };
+
+  // check if devCredentials is available if not refresh it
+  useEffect(() => {
+    const devCredentials =
+      localStorage.getItem("devCredentials") || state.devCredentials;
+
+    if (!devCredentials) {
+      console.error("Access token not available. Refreshing access token.");
+      refreshDevToken();
+    }
+  }, []);
 
   useEffect(() => {
     if (devCredentials) {
       const interval = setInterval(() => {
-        refreshAccessToken();
+        refreshDevToken();
         console.log("Refreshing access token");
       }, 3600000);
       return () => clearInterval(interval);
@@ -146,81 +172,76 @@ export const useSpotify = (): UseSpotifyHook => {
 
   // Function to search for a song on Spotify based on sanitized track information.
   const searchForSong = async (tracksArray: any) => {
-    localStorage.setItem("savedSanitizedTrack", tracksArray);
     const devCredentials =
-      localStorage.getItem("devCredentials") || state.devCredentials;
+      localStorage.getItem("devCredentials") ||
+      process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
 
     if (!devCredentials) {
       console.error("Access token not available. Refreshing access token.");
-      await refreshAccessToken();
-      return;
-    }
-
-    tracksArray.forEach(async (item: any, index: number) => {
-      const response = await fetch(
-        `https://api.spotify.com/v1/search?q=${item}&type=track&limit=5`,
-        {
-          headers: {
-            Authorization: "Bearer " + devCredentials,
-          },
-        }
-      );
-
-      // Check for error response from Spotify API and refresh the access token.
-      if (!response.ok) {
-        console.error(
-          "Error in searchForSong API call. Refreshing access token."
+      await refreshDevToken().then(() => {
+        searchForSong(tracksArray);
+      });
+    } else {
+      console.log("searching for song");
+      tracksArray.forEach(async (item: any, index: number) => {
+        const response = await fetch(
+          `https://api.spotify.com/v1/search?q=${item}&type=track&limit=5`,
+          {
+            headers: {
+              Authorization: "Bearer " + devCredentials || state.devCredentials,
+            },
+          }
         );
-        await refreshAccessToken();
-        return;
-      }
 
-      const data: SpotifyAPIResponse = await response.json();
+        const data: SpotifyAPIResponse = await response.json();
 
-      const newTracks = data.tracks?.items || [];
-      const allTracks = [...state.tracks, ...newTracks];
-      setState({ ...state, newTracks: newTracks, tracks: allTracks });
-      saveAllSongsToLocalStorage(allTracks); // Save to local storage
+        const newTracks = data.tracks?.items || [];
+        const allTracks = [...state.tracks, ...newTracks];
+        setState({ ...state, newTracks: newTracks, tracks: allTracks });
+        saveAllSongsToLocalStorage(allTracks); // Save to local storage
 
-      // Get a list of artist IDs from the tracks.
-      const artistIds = new Set();
-      newTracks.forEach((track) => {
-        track.artists.forEach((artist) => {
-          artistIds.add(artist.id);
+        // Get a list of artist IDs from the tracks.
+        const artistIds = new Set();
+        newTracks.forEach((track) => {
+          track.artists.forEach((artist) => {
+            artistIds.add(artist.id);
+          });
         });
+
+        // Retrieve artist information using the "Get Several Artists" endpoint.
+        const artistResponse = await fetch(
+          `https://api.spotify.com/v1/artists?ids=${Array.from(artistIds).join(
+            ","
+          )}`,
+          {
+            headers: {
+              Authorization: "Bearer " + devCredentials,
+            },
+          }
+        );
+        const artistData = await artistResponse.json();
+
+        // Accumulate all genres from the retrieved artists.
+        let allGenres: string[] = [];
+        artistData?.artists?.forEach((artist: any) => {
+          allGenres.push(...artist.genres);
+        });
+
+        // Obtain unique genres and join them into a single string.
+        const uniqueGenres = Array.from(new Set(allGenres));
+        const genresString = uniqueGenres.join(", ");
+
+        // Use genresString to send to DALL·E API or perform other actions.
+        setGenreString(genresString);
       });
-
-      // Retrieve artist information using the "Get Several Artists" endpoint.
-      const artistResponse = await fetch(
-        `https://api.spotify.com/v1/artists?ids=${Array.from(artistIds).join(
-          ","
-        )}`,
-        {
-          headers: {
-            Authorization: "Bearer " + devCredentials,
-          },
-        }
-      );
-      const artistData = await artistResponse.json();
-
-      // Accumulate all genres from the retrieved artists.
-      let allGenres: string[] = [];
-      artistData.artists.forEach((artist: any) => {
-        allGenres.push(...artist.genres);
-      });
-
-      // Obtain unique genres and join them into a single string.
-      const uniqueGenres = Array.from(new Set(allGenres));
-      const genresString = uniqueGenres.join(", ");
-
-      // Use genresString to send to DALL·E API or perform other actions.
-      setGenreString(genresString);
-    });
+    }
   };
 
   // Function to play or pause a track on Spotify.
   const playTrack = (track: any) => {
+    console.log("initializing play");
     const trackUri = track.uri;
+
     if (player && deviceId) {
       player._options.getOAuthToken((accessToken: string) => {
         if (!state.isPlaying || currentTrackUri != trackUri) {
@@ -244,7 +265,10 @@ export const useSpotify = (): UseSpotifyHook => {
                   audioURL: trackUri,
                   isPlaying: true,
                   track: track,
+                  userAuthorizationCode: accessToken,
                 });
+                setUserAuthorizationCode(accessToken);
+                console.log("new track playing");
               } else {
                 console.error(
                   `Error playing track. Status: ${response.status}`
@@ -268,8 +292,13 @@ export const useSpotify = (): UseSpotifyHook => {
           )
             .then((response) => {
               if (response.ok) {
-                setState({ ...state, isPlaying: false, track: track });
-                setShowSpotifyLogin(true);
+                setState({
+                  ...state,
+                  isPlaying: false,
+                  track: track,
+                });
+                console.log("track paused: ");
+                setShowSpotifyLogin(false);
               } else {
                 console.error(
                   `Error pausing track. Status: ${response.status}`
@@ -281,6 +310,7 @@ export const useSpotify = (): UseSpotifyHook => {
             });
         }
       });
+      console.log("finishing play");
     } else {
       setShowSpotifyLogin(true);
     }
@@ -288,8 +318,9 @@ export const useSpotify = (): UseSpotifyHook => {
 
   return {
     searchForSong,
+    setShowSpotifyLogin,
     playTrack,
-    refreshAccessToken,
+    refreshDevToken,
     userAuthorizationCode,
     authorizeWithSpotify,
     showSpotifyLogin,

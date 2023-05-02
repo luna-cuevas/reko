@@ -21,11 +21,19 @@ type TrackProps = {
     preview_url: string;
   };
   index: number;
+  setShowSpotifyLogin: (show: boolean) => void;
+  showSpotifyLogin: boolean;
 
   playTrack: (track: {}) => void; // New prop for playTrack function
 };
 
-const Track: React.FC<TrackProps> = ({ track, playTrack, index }) => {
+const Track: React.FC<TrackProps> = ({
+  track,
+  playTrack,
+  index,
+  setShowSpotifyLogin,
+  showSpotifyLogin,
+}) => {
   const { name, artists, album, preview_url, uri } = track;
   const { images } = album;
   const { state, setState } = useStateContext();
@@ -69,7 +77,15 @@ const Track: React.FC<TrackProps> = ({ track, playTrack, index }) => {
   };
 
   return (
-    <button onClick={() => playTrack(track)}>
+    <button
+      onClick={() => {
+        if (state.userAuthorizationCode) {
+          playTrack(track);
+        } else {
+          console.log("no auth code");
+          setShowSpotifyLogin(true);
+        }
+      }}>
       <div className="flex  border-b-2 border-[#4f4f4f3c] w-full mx-auto  justify-between py-4  my-0 sm:max-h-[100px] ">
         <div className="lg:w-1/2 flex justify-start w-10/12">
           <p className="pr-2 my-auto">{index + 1}</p>
