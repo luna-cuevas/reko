@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Track from "../components/Track";
 import { supabase } from "../lib/supabaseClient";
 import { Session } from "@supabase/supabase-js";
@@ -11,6 +11,15 @@ import { useRouter } from "next/router";
 import { TrackData } from "../components/types";
 import { useSpotify } from "../utils/useSpotify";
 import { generateAIResponse } from "../utils/generateAIResponse";
+import usePreview from "../utils/usePreview";
+
+type Artist = {
+  name: string;
+};
+
+type LikedSong = {
+  artists: Artist[];
+};
 
 export default function Home() {
   const { state, setState } = useStateContext();
@@ -22,6 +31,7 @@ export default function Home() {
   const [imageIsLoading, setImageIsLoading] = useState(true);
   const [fullImage, setFullImage] = useState(true);
   const [isRequestLoading, setIsRequestLoading] = useState(false);
+  const [allArtists, setAllArtists] = useState<string>("");
 
   const {
     searchForSong,
@@ -32,21 +42,15 @@ export default function Home() {
     genreString,
   } = useSpotify();
 
-  // console.log("state", state);
-
   const { sanitizedTracks, generateAnswer } = generateAIResponse();
 
-  const allArtists = state.likedSongs
-    .map((song) => song.artists)
-    .flat()
-    .filter((artist, index, self) => self.indexOf(artist) === index)
-    .join(", ");
-
-  const prompt = `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n ${
+  const prompt: string = `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n ${
     state.likedSongs
       ? `On subsequent queries, consider some of these suggested songs and blend the genres into your suggestions: ${allArtists}`
       : ""
   }`;
+
+  // `Welcome to the Music Recommendation app! Your role as an AI is to provide music recommendations based on user preferences. Remember the artists and songs you have searched for and suggest music that aligns with the user's taste.\n\nUser Input: ${input}\n\nSuggestions:`;
 
   const loadAllSongsFromLocalStorage = (): TrackData[] => {
     const storedAllSongs = localStorage.getItem("allSongs");
@@ -79,36 +83,50 @@ export default function Home() {
     router.push("/");
   };
 
+  const counter = useRef(0);
+
   const generateImage = async (genreString: any) => {
-    // Construct the prompt using the genres to describe the image
-    const prompt = `An abstract art image that represents the genres: ${genreString}`;
-    setImageIsLoading(true);
-    setLoading(true);
+    counter.current++; // Increment the counter each time the function is called
+    console.log("counter", counter.current);
+    if (counter.current % 5 === 0) {
+      // Construct the prompt using the genres to describe the image
+      const prompt = `An abstract art image that represents the genres: ${genreString}`;
+      setImageIsLoading(true);
+      setLoading(true);
 
-    try {
-      // Make a request to the DALL·E 2.0 API to generate the image
-      console.log("Calling DALL·E API...");
-      const response = await fetch("/api/dalleAI", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      });
+      try {
+        // Make a request to the DALL·E 2.0 API to generate the image
+        console.log("Calling DALL·E API...");
+        const response = await fetch("/api/dalleAI", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      // Set the URL of the generated image
-      setImageUrl(data.imageUrl);
+        // Set the URL of the generated image
+        setImageUrl(data.imageUrl);
 
-      // Save the imageUrl in localStorage
-      localStorage.setItem("imageUrl", data.imageUrl);
-    } catch (error) {
-      console.error("Error during DALL·E API call:", error);
-    } finally {
-      setImageIsLoading(false);
-      setLoading(false);
-      console.log("DALL·E API call finished");
+        // Save the imageUrl in localStorage
+        localStorage.setItem("imageUrl", data.imageUrl);
+      } catch (error) {
+        console.error("Error during DALL·E API call:", error);
+      } finally {
+        setImageIsLoading(false);
+        setLoading(false);
+        console.log("DALL·E API call finished");
+      }
+    } else {
+      // Use the previously saved imageUrl from localStorage
+      const savedImageUrl = localStorage.getItem("imageUrl");
+      if (savedImageUrl) {
+        setImageUrl(savedImageUrl);
+      } else {
+        console.error("No saved imageUrl found in localStorage");
+      }
     }
   };
 
@@ -132,6 +150,8 @@ export default function Home() {
         handleSession(currentSession.data.session);
       });
     }
+
+    // Retrieve likedSongs from local storage or fallback to state.likedSongs
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -171,6 +191,26 @@ export default function Home() {
       router.push("/");
     }
   }, [state.session]);
+
+  console.log("spot login", showSpotifyLogin);
+
+  useEffect(() => {
+    const likedSongsFromLocalStorage = localStorage.getItem("likedSongs");
+    const likedSongs: LikedSong[] | null = likedSongsFromLocalStorage
+      ? JSON.parse(likedSongsFromLocalStorage)
+      : state.likedSongs;
+
+    // Extract and filter artists if likedSongs is available, otherwise use the value from local storage
+    const allArtistsString: string = likedSongs
+      ? likedSongs
+          .map((song) => song.artists) // `song.artists` is already an array of artist names
+          .flat() // Flatten the arrays to get a single array of artist names
+          .filter((artist, index, self) => self.indexOf(artist) === index)
+          .join(", ")
+      : "";
+
+    setAllArtists(allArtistsString);
+  }, [state.likedSongs]);
 
   useEffect(() => {
     // Update the state with tracks from local storage when the component mounts
@@ -260,7 +300,9 @@ export default function Home() {
       devCredentials: "",
       session: {},
       likedSongs: [],
-      track: {},
+      track: {
+        preview_url: "",
+      },
       expiresAt: 0,
       newTracks: [],
       userAuthorizationCode: "",
@@ -297,7 +339,7 @@ export default function Home() {
         <div className=" flex h-full min-h-screen">
           <div
             className={` ${
-              !fullImage && "bg-transparent border-x-0"
+              !fullImage && "bg-transparent !border-x-0"
             } lg:w-3/4 pb-20  px-[5%] bg-[#07173ef2] w-full sm:w-11/12 h-full mx-auto  border-x-2 border-[#4f4f4f3c]`}>
             <nav className="flex justify-between my-4">
               <h1
@@ -415,6 +457,7 @@ export default function Home() {
                 <SpotifyLoginPopUp
                   authorizeWithSpotify={authorizeWithSpotify}
                   setShowSpotifyLogin={setShowSpotifyLogin}
+                  showSpotifyLogin={showSpotifyLogin}
                 />
               )
             )}

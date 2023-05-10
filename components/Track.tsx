@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useStateContext } from "../context/StateContext";
+import usePreview from "../utils/usePreview";
 
 type Artist = {
   name: string;
@@ -37,24 +38,37 @@ const Track: React.FC<TrackProps> = ({
   const { name, artists, album, preview_url, uri } = track;
   const { images } = album;
   const { state, setState } = useStateContext();
-  const { session } = state;
+  const session = JSON.parse(localStorage.getItem("session") || state.session);
+  // console.log("session", session);
+  // const { playPreview } = usePreview;
+
+  const [likedSongs, setLikedSongs] = useState([]);
+
+  // console.log("likedSongs", JSON.parse(likedSongs || "[]"));
+  const savedLiked = localStorage.getItem("likedSongs") || session.likedSongs;
+
+  useEffect(() => {
+    if (savedLiked && savedLiked !== "undefined") {
+      setLikedSongs(JSON.parse(savedLiked));
+    }
+  }, [savedLiked]);
 
   const handleLikeClick = () => {
-    console.log("Like button clicked");
     const songName = name;
     const artistsArray = artists.map((artist) => artist.name);
     toggleLikedSong(artistsArray, songName);
   };
 
-  const isLiked = state.likedSongs?.some(
-    (song) =>
+  const isLiked = likedSongs.some(
+    (song: any) =>
       JSON.stringify(song.artists) ===
         JSON.stringify(track.artists.map((artist: any) => artist.name)) &&
       song.songName === track.name
   );
 
   const toggleLikedSong = async (artists: string[], songName: string) => {
-    if (!session) {
+    if (!session || !session.user || !session.user.id) {
+      console.error("Session or user is undefined");
       return;
     }
 
@@ -62,32 +76,51 @@ const Track: React.FC<TrackProps> = ({
       const response = await fetch("/api/likedSongs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: session.user.id, artists, songName }),
+        body: JSON.stringify({
+          user_id: session.user.id,
+          track,
+          artists,
+          songName,
+        }),
       });
 
       const data = await response.json();
+      console.log(data.message);
       setState({
         ...state,
         likedSongs: data.likedSongs,
       });
-      console.log("liked songs", data.likedSongs);
+      localStorage.setItem("likedSongs", JSON.stringify(data.likedSongs));
+      setLikedSongs(data.likedSongs);
     } catch (error) {
       console.error("Error adding liked song:", error);
     }
   };
 
   return (
-    <button
-      onClick={() => {
-        if (state.userAuthorizationCode) {
-          playTrack(track);
-        } else {
-          console.log("no auth code");
-          setShowSpotifyLogin(true);
-        }
-      }}>
-      <div className="flex  border-b-2 border-[#4f4f4f3c] w-full mx-auto  justify-between py-4  my-0 sm:max-h-[100px] ">
-        <div className="lg:w-1/2 flex justify-start w-10/12">
+    <div className="flex  border-b-2 border-[#4f4f4f3c] w-full mx-auto  justify-between py-4  my-0 sm:max-h-[100px] ">
+      <div className="lg:w-full flex justify-start w-10/12">
+        <button
+          onClick={() => {
+            if (state.userAuthorizationCode) {
+              playTrack(track);
+            } else if (state.previewURL) {
+              setState({
+                ...state,
+                previewURL: preview_url,
+                track: track,
+              });
+            } else {
+              setState({
+                ...state,
+                previewURL: preview_url,
+                track: track,
+              });
+              console.log("no auth code");
+              setShowSpotifyLogin(true);
+            }
+          }}
+          className="flex w-full">
           <p className="pr-2 my-auto">{index + 1}</p>
           {images.length > 0 && (
             <img
@@ -105,22 +138,20 @@ const Track: React.FC<TrackProps> = ({
                 .slice(0, 100)}
             </p>
           </div>
-        </div>
-        <div className="sm:justify-evenly ml-[4%] sm:ml-0 sm:my-auto w-fit sm:gap-0 flex gap-8 mt-6">
-          <div onClick={handleLikeClick}>
-            <img
-              className="max-h-[30px] my-auto h-full"
-              src={
-                isLiked
-                  ? "/images/heart-icon-red.png"
-                  : "/images/heart-icon.png"
-              }
-              alt=""
-            />
-          </div>
+        </button>
+      </div>
+      <div className="sm:justify-evenly ml-[4%] sm:ml-0 sm:my-auto w-fit sm:gap-0 flex gap-8 mt-6">
+        <div onClick={handleLikeClick}>
+          <img
+            className="max-h-[30px] my-auto h-full"
+            src={
+              isLiked ? "/images/heart-icon-red.png" : "/images/heart-icon.png"
+            }
+            alt=""
+          />
         </div>
       </div>
-    </button>
+    </div>
   );
 };
 

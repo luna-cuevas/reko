@@ -5,6 +5,7 @@ type LikedSongData = {
   user_id: string;
   artists: string[];
   songName: string;
+  track: object;
 };
 
 export default async function handler(
@@ -16,7 +17,8 @@ export default async function handler(
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const { user_id, artists, songName } = req.body as LikedSongData;
+  const { user_id, track, artists, songName } = req.body as LikedSongData;
+
   try {
     // Check if the song is already liked by the user
     const { data: existingSong, error: existingSongError } = await supabase
@@ -25,8 +27,10 @@ export default async function handler(
       .eq("user_id", user_id)
       .contains("artists", artists)
       .eq("songName", songName);
+    // .eq("track", track);
 
     if (existingSongError) {
+      console.log("existingSongError", existingSongError);
       throw existingSongError;
     }
 
@@ -38,6 +42,7 @@ export default async function handler(
         .eq("user_id", user_id)
         .contains("artists", artists)
         .eq("songName", songName);
+      // .eq("track", track);
 
       if (deleteError) {
         throw deleteError;
@@ -58,7 +63,7 @@ export default async function handler(
       // Insert the new liked song
       const { data, error } = await supabase
         .from("liked_songs")
-        .insert([{ user_id: user_id, artists, songName }])
+        .insert([{ user_id: user_id, artists, songName, track }])
         .single();
 
       if (error) {

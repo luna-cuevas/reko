@@ -8,12 +8,16 @@ type StateType = {
   devCredentials: string;
   session: any;
   likedSongs: any[];
-  track: object;
+  track: {
+    preview_url: string;
+  };
+  previewURL: string;
   expiresAt: number;
   newTracks: any[];
   userAuthorizationCode: string;
   deviceID: any;
   refreshToken: string;
+  progress: number;
 };
 
 type StateContextType = {
@@ -28,12 +32,14 @@ const initialState: StateType = {
   devCredentials: "",
   session: {},
   likedSongs: [],
-  track: {},
+  track: { preview_url: "" },
+  previewURL: "",
   expiresAt: 0,
   newTracks: [],
   deviceID: "",
   userAuthorizationCode: "",
   refreshToken: "",
+  progress: 0,
 };
 
 const StateContext = createContext<StateContextType | undefined>(undefined);
