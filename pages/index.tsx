@@ -45,7 +45,7 @@ export default function Home() {
   const { sanitizedTracks, generateAnswer } = generateAIResponse();
 
   const prompt: string = `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n ${
-    state.likedSongs
+    state?.likedSongs
       ? `On subsequent queries, consider some of these suggested songs and blend the genres into your suggestions: ${allArtists}`
       : ""
   }`;
@@ -210,7 +210,7 @@ export default function Home() {
       : "";
 
     setAllArtists(allArtistsString);
-  }, [state.likedSongs]);
+  }, [state?.likedSongs]);
 
   useEffect(() => {
     // Update the state with tracks from local storage when the component mounts
