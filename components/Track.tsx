@@ -38,14 +38,20 @@ const Track: React.FC<TrackProps> = ({
   const { name, artists, album, preview_url, uri } = track;
   const { images } = album;
   const { state, setState } = useStateContext();
-  const session = JSON.parse(localStorage.getItem("session") || state.session);
+  const session = JSON.parse(
+    localStorage.getItem("session") || state.session || "{}"
+  );
   // console.log("session", session);
   // const { playPreview } = usePreview;
 
   const [likedSongs, setLikedSongs] = useState([]);
 
   // console.log("likedSongs", JSON.parse(likedSongs || "[]"));
-  const savedLiked = localStorage.getItem("likedSongs") || session.likedSongs;
+
+  const savedLiked =
+    localStorage.getItem("likedSongs") ||
+    (session && session.likedSongs) ||
+    "[]";
 
   useEffect(() => {
     if (savedLiked && savedLiked !== "undefined") {
