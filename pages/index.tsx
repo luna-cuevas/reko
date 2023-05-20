@@ -32,6 +32,7 @@ export default function Home() {
   const [fullImage, setFullImage] = useState(true);
   const [isRequestLoading, setIsRequestLoading] = useState(false);
   const [allArtists, setAllArtists] = useState<string>("");
+  const [sensitivity, setSensitivity] = useState("0.5");
 
   const {
     searchForSong,
@@ -44,20 +45,20 @@ export default function Home() {
 
   const { sanitizedTracks, generateAnswer } = generateAIResponse();
 
-  const prompt: string = `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n ${
-    state?.likedSongs
-      ? `On subsequent queries, consider some of these suggested songs and blend the genres into your suggestions: ${allArtists}`
-      : ""
-  }`;
-
-  // `Welcome to the Music Recommendation app! Your role as an AI is to provide music recommendations based on user preferences. Remember the artists and songs you have searched for and suggest music that aligns with the user's taste.\n\nUser Input: ${input}\n\nSuggestions:`;
+  const prompt: string =
+    sensitivity <= "0.9"
+      ? `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n ${
+          state?.likedSongs
+            ? `On subsequent queries, consider some of these suggested songs and blend the genres into your suggestions: ${allArtists}`
+            : ""
+        }`
+      : `Give me the exact song that matches this query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash.  Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n`;
 
   const loadAllSongsFromLocalStorage = (): TrackData[] => {
     const storedAllSongs = localStorage.getItem("allSongs");
     return storedAllSongs ? JSON.parse(storedAllSongs) : [];
   };
 
-  // make a function that clears the tracks from local storage and state
   const clearTracks = () => {
     localStorage.removeItem("tracks");
     setState({
@@ -155,7 +156,7 @@ export default function Home() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === "INITIAL_SESSION") {
+        if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
           // Access the Spotify access token
 
           const storedSessionStr = localStorage.getItem("session");
@@ -191,8 +192,6 @@ export default function Home() {
       router.push("/");
     }
   }, [state.session]);
-
-  console.log("spot login", showSpotifyLogin);
 
   useEffect(() => {
     const likedSongsFromLocalStorage = localStorage.getItem("likedSongs");
@@ -238,7 +237,7 @@ export default function Home() {
           tracksArray.splice(index, 1);
         }
       });
-      searchForSong(tracksArray);
+      searchForSong(tracksArray, 5);
       generateImage(genreString);
     }
   }, [sanitizedTracks]);
@@ -278,11 +277,27 @@ export default function Home() {
 
     setIsRequestLoading(true);
     console.log("isRequestLoading", isRequestLoading);
-    // Call the generateAnswer function
-    await generateAnswer(input, prompt).then(() => {
-      setIsRequestLoading(false);
-      console.log("isRequestLoading", isRequestLoading);
-    });
+
+    if (sensitivity <= "0.9") {
+      await generateAnswer(input, prompt, sensitivity).then(() => {
+        setIsRequestLoading(false);
+        console.log("senstivity", sensitivity);
+        console.log("isRequestLoading", isRequestLoading);
+      });
+    } else {
+      // convert input string into array but dont split
+      const inputArrayWithArtist = input.split("\n");
+
+      await searchForSong(inputArrayWithArtist, 3).then(() => {
+        // wait a second to allow the tracks to be set in state
+        setTimeout(() => {
+          setIsRequestLoading(false);
+          console.log("inputArrayWithArtist", inputArrayWithArtist);
+          console.log("senstivity", sensitivity);
+          console.log("isRequestLoading", isRequestLoading);
+        }, 1000);
+      });
+    }
 
     // Set the loading state back to false to re-enable the button
   };
@@ -340,7 +355,7 @@ export default function Home() {
           <div
             className={` ${
               !fullImage && "bg-transparent !border-x-0"
-            } lg:w-3/4 pb-20  px-[5%] bg-[#07173ef2] w-full sm:w-11/12 h-full mx-auto  border-x-2 border-[#4f4f4f3c]`}>
+            } lg:w-3/4 pb-20  px-[5%] bg-[#07173ef2] w-full sm:w-11/12  mx-auto  border-x-2 border-[#4f4f4f3c]`}>
             <nav className="flex justify-between my-4">
               <h1
                 className={`${
@@ -374,7 +389,9 @@ export default function Home() {
                     <label
                       className="text-md md:text-xl m-auto"
                       htmlFor="query">
-                      Provide a mood, feeling, song, or artist.
+                      {sensitivity == "1"
+                        ? "Look for a specific song or artist."
+                        : "Provide a mood, feeling, song, or artist."}
                     </label>
                     <input
                       onChange={(e) => setInput(e.target.value)}
@@ -384,18 +401,38 @@ export default function Home() {
                       type="text"
                     />
                   </div>
-                  <div className="md:w-1/3 xl:w-1/4 w-1/2 m-auto">
+
+                  <div className="xl:w-[90%] items-end mb-4  flex justify-between w-5/6 m-auto">
+                    <div>
+                      <div className="flex justify-between text-xs text-white">
+                        <label className="" htmlFor="Unique">
+                          Random
+                        </label>
+                        <label htmlFor="Strict">Exact</label>
+                      </div>
+                      <input
+                        onChange={(e) => setSensitivity(e.target.value)}
+                        value={sensitivity}
+                        name="sensitivity"
+                        className="rounded-md bg-[#ffffff42] mt-2 z-20  w-full py-2  border-[1px] border-white"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                      />
+                    </div>
+
                     {!isRequestLoading ? (
                       <>
                         <button
-                          className="rounded-xl sm:mt-10 sm:mb-0 hover:bg-white/80 text-md md:text-xl w-full px-4 py-2 my-8 font-medium text-black bg-white"
+                          className="rounded-xl sm:mt-10 sm:mb-0 hover:bg-white/80 text-md md:text-xl w-1/3 px-4 py-2 my-8 font-medium text-black bg-white"
                           onClick={handleGenerateAnswer}>
                           Search &rarr;
                         </button>
                       </>
                     ) : (
                       <button
-                        className="rounded-xl sm:mt-10 sm:mb-0 w-full px-4 py-2 my-8 font-medium text-black bg-white"
+                        className="rounded-xl sm:mt-10 sm:mb-0 w-1/3 px-4 py-2 my-8 font-medium text-black bg-white"
                         disabled>
                         <div
                           role="status"
@@ -419,12 +456,12 @@ export default function Home() {
                         </div>
                       </button>
                     )}
+                    <p className="">
+                      <button onClick={() => clearTracks()} className="">
+                        Clear Results
+                      </button>
+                    </p>
                   </div>
-                  <p className="flex justify-end w-full m-auto mb-2">
-                    <button onClick={() => clearTracks()} className="">
-                      Clear Results
-                    </button>
-                  </p>
                 </div>
 
                 <div className="flex flex-col">

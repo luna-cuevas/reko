@@ -30,3 +30,14 @@ export type SpotifyAPIResponse = {
     items: TrackData[];
   };
 };
+
+export type UseOpenAIHook = {
+  generateAnswer: (
+    input: string,
+    prompt: string,
+    sensitivity: string
+  ) => Promise<void>;
+  generatedAnswer: string;
+  loading: boolean;
+  sanitizedTracks: string;
+};

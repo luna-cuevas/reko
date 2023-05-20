@@ -9,7 +9,7 @@ import {
 
 // Define the TypeScript type for the useSpotify hook's return value.
 type UseSpotifyHook = {
-  searchForSong: (tracksArray: string[]) => Promise<void>;
+  searchForSong: (tracksArray: string[], limit: number) => Promise<void>;
   playTrack: (track: any) => void;
   refreshDevToken: () => Promise<void>;
   userAuthorizationCode: string;
@@ -171,7 +171,7 @@ export const useSpotify = (): UseSpotifyHook => {
   }, [devCredentials]);
 
   // Function to search for a song on Spotify based on sanitized track information.
-  const searchForSong = async (tracksArray: any) => {
+  const searchForSong = async (tracksArray: any, limit: number) => {
     const devCredentials =
       localStorage.getItem("devCredentials") ||
       process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
@@ -179,13 +179,13 @@ export const useSpotify = (): UseSpotifyHook => {
     if (!devCredentials) {
       console.error("Access token not available. Refreshing access token.");
       await refreshDevToken().then(() => {
-        searchForSong(tracksArray);
+        searchForSong(tracksArray, limit);
       });
     } else {
       console.log("searching for song");
       tracksArray.forEach(async (item: any, index: number) => {
         const response = await fetch(
-          `https://api.spotify.com/v1/search?q=${item}&type=track&limit=5`,
+          `https://api.spotify.com/v1/search?q=${item}&type=track&limit=${limit}`,
           {
             headers: {
               Authorization: "Bearer " + devCredentials || state.devCredentials,

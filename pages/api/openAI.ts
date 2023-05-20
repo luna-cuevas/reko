@@ -20,14 +20,14 @@ export default async function handler(
     throw new Error("Missing env var from OpenAI");
   }
 
-  const { prompt } = req.body;
+  const { prompt, sensitivity } = req.body;
 
   try {
     const response = await openai.createCompletion({
       model: "text-davinci-003",
       prompt,
       max_tokens: 250,
-      temperature: 0.8,
+      temperature: Number(sensitivity),
     });
 
     const data = response.data;
