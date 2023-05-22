@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { useStateContext } from "../context/StateContext";
-import usePreview from "../utils/usePreview";
+import { supabase } from "../lib/supabaseClient";
 
 type Artist = {
   name: string;
@@ -33,7 +32,6 @@ const Track: React.FC<TrackProps> = ({
   playTrack,
   index,
   setShowSpotifyLogin,
-  showSpotifyLogin,
 }) => {
   const { name, artists, album, preview_url, uri } = track;
   const { images } = album;
@@ -41,23 +39,18 @@ const Track: React.FC<TrackProps> = ({
   const session = JSON.parse(
     localStorage.getItem("session") || state.session || "{}"
   );
-  // console.log("session", session);
-  // const { playPreview } = usePreview;
-
   const [likedSongs, setLikedSongs] = useState([]);
 
-  // console.log("likedSongs", JSON.parse(likedSongs || "[]"));
-
-  const savedLiked =
-    localStorage.getItem("likedSongs") ||
-    (session && session.likedSongs) ||
-    "[]";
-
   useEffect(() => {
-    if (savedLiked && savedLiked !== "undefined") {
-      setLikedSongs(JSON.parse(savedLiked));
-    }
-  }, [savedLiked]);
+    const fetchLikedSongs = async () => {
+      const { data: databaseLikedSongs, error } = await supabase
+        .from("liked_songs")
+        .select("*")
+        .eq("user_id", session.user.id);
+      setLikedSongs(databaseLikedSongs as any);
+    };
+    fetchLikedSongs();
+  }, []);
 
   const handleLikeClick = () => {
     const songName = name;

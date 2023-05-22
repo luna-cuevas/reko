@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import useSpotifySDK from "../lib/useSpotifySDK";
 import { useStateContext } from "../context/StateContext";
 import {
@@ -6,6 +6,7 @@ import {
   OpenAIAPIResponse,
   SpotifyAPIResponse,
 } from "../components/types";
+import { supabase } from "../lib/supabaseClient";
 
 // Define the TypeScript type for the useSpotify hook's return value.
 type UseSpotifyHook = {
@@ -17,7 +18,11 @@ type UseSpotifyHook = {
   showSpotifyLogin: boolean;
   setShowSpotifyLogin: (showSpotifyLogin: boolean) => void;
   genreString: string | "";
-  // Other functions and state variables related to Spotify
+  exportLikedSongsAsPlaylist: (
+    playlistName: string,
+    playlistDescription: string,
+    isPublic: boolean
+  ) => Promise<void>;
 };
 
 export const useSpotify = (): UseSpotifyHook => {
@@ -31,8 +36,15 @@ export const useSpotify = (): UseSpotifyHook => {
   const [showSpotifyLogin, setShowSpotifyLogin] = useState(false);
   const [currentTrackUri, setCurrentTrackUri] = useState<string | null>(null);
   const [genreString, setGenreString] = useState("");
-
   const { state, setState } = useStateContext();
+  const [session, setSession] = useState<any>({});
+
+  useEffect(() => {
+    // get session from local storage or session state
+    setSession(
+      JSON.parse(localStorage.getItem("session") || state.session || "{}")
+    );
+  }, [state.session]);
 
   const saveAllSongsToLocalStorage = (tracks: TrackData[]) => {
     localStorage.setItem("tracks", JSON.stringify(tracks));
@@ -46,6 +58,103 @@ export const useSpotify = (): UseSpotifyHook => {
     setUserAuthorizationCode(userAuthorizationCode);
 
     localStorage.setItem("userAuthorizationCode", userAuthorizationCode);
+  };
+
+  const exportLikedSongsAsPlaylist = async (
+    playlistName: string,
+    playlistDescription: string,
+    isPublic: boolean
+  ) => {
+    // Check if the user is authenticated
+    if (!userAuthorizationCode) {
+      console.error("User is not authenticated.");
+      return;
+    }
+
+    const { data: likedSongs, error } = (await supabase
+      .from("liked_songs")
+      .select("*")
+      .eq("user_id", session.user.id)) as any;
+
+    console.log("likedSongs", likedSongs);
+
+    // Check if there are liked songs to export
+    if (likedSongs.length === 0) {
+      console.error("No liked songs to export.");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://api.spotify.com/v1/me", {
+        headers: {
+          Authorization: `Bearer ${userAuthorizationCode}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const user_id = data.id;
+
+        const createPlaylistResponse = await fetch(
+          `https://api.spotify.com/v1/users/${user_id}/playlists`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${userAuthorizationCode}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: playlistName,
+              description: playlistDescription,
+              public: isPublic,
+            }),
+          }
+        );
+
+        if (!createPlaylistResponse.ok) {
+          console.error("Failed to create the playlist.");
+          return;
+        }
+
+        const { id: playlistId } = await createPlaylistResponse.json();
+
+        // Get the track URIs of the liked songs
+        const trackUris = likedSongs.map((track: any) => track.track.uri);
+
+        // Add the tracks to the playlist
+        const addTracksResponse = await fetch(
+          `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${userAuthorizationCode}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              uris: trackUris,
+            }),
+          }
+        );
+
+        if (!addTracksResponse.ok) {
+          console.error("Failed to add tracks to the playlist.");
+          return;
+        }
+
+        console.log("Exported liked songs as a playlist.");
+      } else {
+        console.error("Failed to fetch user info.");
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
+    // };
+
+    try {
+      // Create the playlist
+    } catch (error) {
+      console.error("Error exporting liked songs as a playlist:", error);
+    }
   };
 
   // useEffect hook to handle the initial fetching of the Spotify access token.
@@ -65,7 +174,13 @@ export const useSpotify = (): UseSpotifyHook => {
       process.env.NODE_ENV !== "production"
         ? "http://localhost:3000/spotifyCallback/"
         : "https://reko.vercel.app/spotifyCallback/";
-    const scopes = ["streaming", "user-read-email", "user-read-private"];
+    const scopes = [
+      "streaming",
+      "user-read-email",
+      "user-read-private",
+      "playlist-modify-public",
+      "playlist-modify-private",
+    ];
 
     // Join the scopes with a space separator and encode the parameter
     const scopeParam = encodeURIComponent(scopes.join(" "));
@@ -95,7 +210,6 @@ export const useSpotify = (): UseSpotifyHook => {
       setDeviceId(device_id);
 
       localStorage.setItem("player", JSON.stringify(playerInstance));
-      console.log("device id", device_id);
     });
 
     playerInstance.on("player_state_changed", (state: any) => {
@@ -131,7 +245,7 @@ export const useSpotify = (): UseSpotifyHook => {
           "Content-Type": "application/x-www-form-urlencoded",
           Authorization: "Basic " + authHeader, // Use the Basic authorization header
         },
-        body: `grant_type=refresh_token&refresh_token=${refresh_token}`, // Use the refresh token from environment variables
+        body: `grant_type=refresh_token&refresh_token=${refresh_token}`, // Include the necessary scopes
       });
 
       if (response.ok) {
@@ -140,7 +254,7 @@ export const useSpotify = (): UseSpotifyHook => {
         setState({ ...state, devCredentials: accessToken });
         setDevCredentials(accessToken);
         localStorage.setItem("devCredentials", accessToken);
-        console.log("dev token refreshed", accessToken);
+        console.log("dev token refreshed");
       } else {
         console.error("Failed to refresh access token");
       }
@@ -319,6 +433,7 @@ export const useSpotify = (): UseSpotifyHook => {
   return {
     searchForSong,
     setShowSpotifyLogin,
+    exportLikedSongsAsPlaylist,
     playTrack,
     refreshDevToken,
     userAuthorizationCode,

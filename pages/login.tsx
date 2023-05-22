@@ -19,7 +19,7 @@ const login = () => {
     setLoading(true);
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN") {
+        if (event === "SIGNED_IN" && session) {
           // Redirect to the homepage when the user logs in
           router.push("/");
           localStorage.setItem("session", JSON.stringify(session));
