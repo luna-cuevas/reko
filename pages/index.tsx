@@ -157,7 +157,7 @@ export default function Home() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+        if (event === "INITIAL_SESSION" && session) {
           // Access the Spotify access token
 
           const storedSessionStr = localStorage.getItem("session");
@@ -173,7 +173,7 @@ export default function Home() {
 
             localStorage.setItem("session", JSON.stringify(session));
           }
-          console.log("setting signed in session");
+          console.log("setting signed in session", session, event);
         } else {
           router.push("/login");
         }

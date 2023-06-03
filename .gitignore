@@ -38,5 +38,7 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 .next
+.next/cache
 
 .env
+.next/cache/webpack/server-development/index.pack
