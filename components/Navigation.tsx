@@ -66,24 +66,36 @@ const Navigation = ({ fullImage, setFullImage }: NavigationProps) => {
         Reko
       </h1>
       <div className="flex justify-end gap-6 mr-6 text-white">
-        <button className={`md:hidden`} onClick={toggleMobileMenu}>
-          <svg
-            className={`w-6 h-6 ${isMobileMenuOpen ? "hidden" : "block"}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
+        <button className={`sm:hidden`} onClick={toggleMobileMenu}>
+          {isMobileMenuOpen ? (
+            <svg className={`w-6 h-6 `} viewBox="0 0 24 24" fill="none">
+              <path
+                d="M6 18L18 6M6 6l12 12"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <svg
+              className={`w-6 h-6 `}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          )}
         </button>
         <div
-          className={`md:flex items-center gap-6 ${
+          className={`flex flex-col sm:flex-row sm:flex items-center gap-6 ${
             isMobileMenuOpen
-              ? "fixed top-16 m-auto z-[1000] left-0 w-10/12 right-0 h-full bg-gray-900 p-8"
+              ? "fixed top-16 m-auto z-[1000] left-0 w-10/12 right-0 h-fit bg-[#07173e] p-8"
               : "hidden"
           }`}>
           <button>
@@ -100,20 +112,6 @@ const Navigation = ({ fullImage, setFullImage }: NavigationProps) => {
               setFullImage(!fullImage);
             }}>
             <img className="w-[20px]" src="images/image-icon.png" alt="" />
-          </button>
-          <button className="top-4 right-4 absolute" onClick={toggleMobileMenu}>
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
           </button>
         </div>
       </div>

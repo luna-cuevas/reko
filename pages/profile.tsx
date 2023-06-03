@@ -153,9 +153,9 @@ const profile = () => {
           {fullImage && (
             <div className="h-full">
               <div className=" mx-6">
-                <div className="flex justify-between pb-6 my-20 mb-2 text-2xl font-bold text-center border-b-2 border-gray-800">
-                  <h1 className="w-fit">Liked Songs</h1>
-                  <div className="w-fit justify-end">
+                <div className="sm:flex-row sm:my-20 flex flex-col justify-between gap-4 pb-6 mt-8 mb-2 text-2xl font-bold text-center border-b-2 border-gray-800">
+                  <h1 className="w-fit sm:m-0 m-auto">Liked Songs</h1>
+                  <div className="w-fit sm:m-0 justify-end m-auto">
                     <button
                       onClick={() => setNewPlaylistPopup(true)}
                       className="hover:bg-[#2a47b3] px-4 py-2 text-sm font-medium text-white bg-[#3962f6] rounded-md">

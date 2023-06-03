@@ -333,7 +333,7 @@ export default function Home() {
             {fullImage && (
               <>
                 <div className="sm:pt-20 transition-all opacity-100 pt-10 border-y-2 border-[#4f4f4f3c]">
-                  <div className="xl:w-1/2 w-5/6 mx-auto">
+                  <div className="xl:w-1/2 w-full mx-auto">
                     <div className="rounded-md bg-[#ffffff42] relative mt-2 flex  px-2 py-2  w-full  border-[1px] border-white">
                       <input
                         onChange={(e) => setInput(e.target.value)}
@@ -389,7 +389,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="xl:w-[90%] items-end my-4 h-fit  flex justify-between w-5/6 m-auto">
+                  <div className="xl:w-[90%] items-end my-4 h-fit  flex justify-between w-full m-auto">
                     <div>
                       <input
                         onChange={(e) => setSensitivity(e.target.value)}
