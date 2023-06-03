@@ -303,34 +303,6 @@ export default function Home() {
     // Set the loading state back to false to re-enable the button
   };
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    localStorage.clear();
-    router.push("/login");
-    // clear session from state
-    setState({
-      ...state,
-      isPlaying: false,
-      audioURL: "",
-      tracks: [],
-      devCredentials: "",
-      session: {},
-      likedSongs: [],
-      track: {
-        preview_url: "",
-      },
-      expiresAt: 0,
-      newTracks: [],
-      userAuthorizationCode: "",
-    });
-
-    if (error) {
-      console.error("Error signing out:", error.message);
-    }
-  };
-
-  // signOut();
-
   return (
     <main
       style={{

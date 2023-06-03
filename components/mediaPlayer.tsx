@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useStateContext } from "../context/StateContext";
+import { supabase } from "../lib/supabaseClient";
 
 type MediaPlayerProps = {
   audioURL: string;
@@ -11,29 +12,107 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ playTrack }) => {
   const audioRef = useRef<HTMLAudioElement>(new Audio());
   const [progress, setProgress] = useState(0);
   const { state, setState } = useStateContext();
+  const duration = state.track.duration_ms / 1000;
+  const [intervalId, setIntervalId] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(0); // Track the currentTime manually
+  const [likedSongs, setLikedSongs] = useState([]);
+  const { name, artists } = state.track;
+
+  const session = JSON.parse(
+    localStorage.getItem("session") || state.session || "{}"
+  );
+
+  useEffect(() => {
+    const fetchLikedSongs = async () => {
+      const { data: databaseLikedSongs, error } = await supabase
+        .from("liked_songs")
+        .select("*")
+        .eq("user_id", session.user.id);
+      setLikedSongs(databaseLikedSongs as any);
+    };
+    fetchLikedSongs();
+  }, []);
+
+  const toggleLikedSong = async (artists: string[], songName: string) => {
+    if (!session || !session.user || !session.user.id) {
+      console.error("Session or user is undefined");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/likedSongs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: session.user.id,
+          track: state.track,
+          artists,
+          songName,
+        }),
+      });
+
+      const data = await response.json();
+      console.log(data.message);
+      setState({
+        ...state,
+        likedSongs: data.likedSongs,
+      });
+      localStorage.setItem("likedSongs", JSON.stringify(data.likedSongs));
+      setLikedSongs(data.likedSongs);
+    } catch (error) {
+      console.error("Error adding liked song:", error);
+    }
+  };
+  const isLiked = likedSongs.some(
+    (song: any) =>
+      JSON.stringify(song.artists) ===
+        JSON.stringify(state.track.artists.map((artist: any) => artist.name)) &&
+      song.songName === state.track.name
+  );
+
+  const handleLikeClick = () => {
+    const songName = name;
+    const artistsArray = artists.map((artist) => artist.name) as string[];
+    toggleLikedSong(artistsArray, songName);
+  };
+
+  console.log("progress", progress);
 
   const updateProgress = () => {
-    if (audioRef.current) {
+    if (audioRef.current && state.previewURL) {
       const { currentTime, duration } = audioRef.current;
       if (duration) {
         setProgress((currentTime / duration) * 100);
       }
+    } else {
+      setCurrentTime((prevTime) => prevTime + 1);
+      // update the progress bar every second
+      setProgress((currentTime / duration) * 100);
     }
   };
 
   useEffect(() => {
-    audioRef.current.src = state.previewURL;
-
-    audioRef.current.play();
+    if (state.previewURL) {
+      audioRef.current.src = state.previewURL;
+      audioRef.current.play();
+    }
+    setProgress(0);
+    setCurrentTime(0);
 
     audioRef.current.addEventListener("timeupdate", updateProgress);
+    updateProgress();
+
+    const interval = setInterval(() => {
+      setCurrentTime((prevTime) => prevTime + 1);
+      updateProgress();
+    }, 1000);
+    setIntervalId(interval as unknown as number);
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener("timeupdate", updateProgress);
-      }
+      audioRef.current.removeEventListener("timeupdate", updateProgress);
+      clearInterval(interval);
     };
-  }, [state.previewURL]);
+  }, [state.previewURL, state.track]);
 
   useEffect(() => {
     if (state.isPlaying) {
@@ -42,14 +121,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ playTrack }) => {
       audioRef.current.pause();
     }
   }, [state.isPlaying]);
-
-  // useEffect(() => {
-  //   if (state.isPlaying) {
-  //     audioRef.current.play();
-  //   } else {
-  //     audioRef.current.pause();
-  //   }
-  // }, [audioRef.current.src]);
 
   // Update the playPausePreview function to handle switching between songs
   const playPausePreview = (previewURL: string) => {
@@ -65,25 +136,49 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ playTrack }) => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full p-4 bg-[#07173ede] shadow-lg">
+    <div className="fixed bottom-0 left-0 w-full py-2 bg-[#07173ede] shadow-lg">
       <div className="flex items-center justify-center">
-        <button
-          className="focus:outline-none mx-4 text-blue-500"
-          onClick={() => {
-            if (state.previewURL) {
-              playPausePreview(state.track.preview_url);
-            }
+        <div className="flex w-1/4">
+          <img
+            className="w-[60px]"
+            src={state.track.album.images[0].url}
+            alt=""
+          />
+          <div className="flex flex-col m-auto ml-2">
+            <p>{state.track.name}</p>
+            <p className="text-xs text-gray-400">
+              {state.track.artists[0].name}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col w-1/3">
+          <button
+            className="focus:outline-none mx-4 mb-4 text-blue-500"
+            onClick={() => {
+              if (state.previewURL) {
+                playPausePreview(state.track.preview_url);
+              }
 
-            if (state.previewURL == "") {
-              playTrack(state.track);
+              if (state.previewURL == "") {
+                playTrack(state.track);
+              }
+            }}>
+            {state.isPlaying ? "Pause" : "Play"}
+          </button>
+          <div className="w-full h-2 mx-4 bg-gray-200 rounded-full">
+            <div
+              className="h-2 bg-blue-500 rounded-full"
+              style={{ width: `${progress}%` }}></div>
+          </div>
+        </div>
+        <div onClick={handleLikeClick} className="flex justify-end w-1/4">
+          <img
+            className="max-h-[30px] my-auto h-full"
+            src={
+              isLiked ? "/images/heart-icon-red.png" : "/images/heart-icon.png"
             }
-          }}>
-          {state.isPlaying ? "Pause" : "Play"}
-        </button>
-        <div className="w-full h-2 mx-4 bg-gray-200 rounded-full">
-          <div
-            className="h-2 bg-blue-500 rounded-full"
-            style={{ width: `${progress}%` }}></div>
+            alt=""
+          />
         </div>
       </div>
     </div>

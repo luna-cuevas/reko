@@ -41,9 +41,7 @@ export const useSpotify = (): UseSpotifyHook => {
 
   useEffect(() => {
     // get session from local storage or session state
-    setSession(
-      JSON.parse(localStorage.getItem("session") || state.session || "{}")
-    );
+    setSession(localStorage.getItem("session") || state.session || "{}");
   }, [state.session]);
 
   const saveAllSongsToLocalStorage = (tracks: TrackData[]) => {
@@ -310,6 +308,7 @@ export const useSpotify = (): UseSpotifyHook => {
         const data: SpotifyAPIResponse = await response.json();
 
         const newTracks = data.tracks?.items || [];
+        console.log("new tracks", newTracks);
         const allTracks = [...state.tracks, ...newTracks];
         setState({ ...state, newTracks: newTracks, tracks: allTracks });
         saveAllSongsToLocalStorage(allTracks); // Save to local storage
@@ -383,6 +382,8 @@ export const useSpotify = (): UseSpotifyHook => {
                 });
                 setUserAuthorizationCode(accessToken);
                 console.log("new track playing");
+                // read the response body and parse as JSON
+                return response;
               } else {
                 console.error(
                   `Error playing track. Status: ${response.status}`

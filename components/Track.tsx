@@ -2,23 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useStateContext } from "../context/StateContext";
 import { supabase } from "../lib/supabaseClient";
 
-type Artist = {
-  name: string;
-};
-
-type Album = {
-  name: string;
-  uri: string;
-  images: { url: string }[];
-};
-
 type TrackProps = {
   track: {
-    name: string;
-    artists: Artist[];
-    album: Album;
-    uri: string;
+    duration_ms: number;
     preview_url: string;
+    album: {
+      images: [{ url: string }];
+    };
+    name: string;
+    artists: [{ name?: string | undefined }];
   };
   index: number;
   setShowSpotifyLogin: (show: boolean) => void;
@@ -33,7 +25,7 @@ const Track: React.FC<TrackProps> = ({
   index,
   setShowSpotifyLogin,
 }) => {
-  const { name, artists, album, preview_url, uri } = track;
+  const { name, artists, album, preview_url } = track;
   const { images } = album;
   const { state, setState } = useStateContext();
   const session = JSON.parse(
@@ -48,13 +40,17 @@ const Track: React.FC<TrackProps> = ({
         .select("*")
         .eq("user_id", session.user.id);
       setLikedSongs(databaseLikedSongs as any);
+      setState({
+        ...state,
+        likedSongs: databaseLikedSongs as any,
+      });
     };
     fetchLikedSongs();
   }, []);
 
   const handleLikeClick = () => {
     const songName = name;
-    const artistsArray = artists.map((artist) => artist.name);
+    const artistsArray = artists.map((artist) => artist.name) as string[];
     toggleLikedSong(artistsArray, songName);
   };
 

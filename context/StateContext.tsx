@@ -9,7 +9,21 @@ type StateType = {
   session: any;
   likedSongs: any[];
   track: {
+    duration_ms: number;
     preview_url: string;
+    album: {
+      images: [
+        {
+          url: string;
+        }
+      ];
+    };
+    name: string;
+    artists: [
+      {
+        name?: string;
+      }
+    ];
   };
   previewURL: string;
   expiresAt: number;
@@ -32,7 +46,23 @@ const initialState: StateType = {
   devCredentials: "",
   session: {},
   likedSongs: [],
-  track: { preview_url: "" },
+  track: {
+    duration_ms: 0,
+    preview_url: "",
+    album: {
+      images: [
+        {
+          url: "",
+        },
+      ],
+    },
+    name: "",
+    artists: [
+      {
+        name: "",
+      },
+    ],
+  },
   previewURL: "",
   expiresAt: 0,
   newTracks: [],

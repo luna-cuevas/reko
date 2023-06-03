@@ -29,11 +29,13 @@ type Album = {
 };
 
 type TrackData = {
-  name: string;
-  artists: Artist[];
-  album: Album;
-  uri: string;
   preview_url: string;
+  duration_ms: number;
+  album: {
+    images: [{ url: string }];
+  };
+  name: string;
+  artists: [{ name?: string | undefined }];
 };
 
 const profile = () => {

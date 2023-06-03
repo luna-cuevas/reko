@@ -23,7 +23,10 @@ const login = () => {
           // Redirect to the homepage when the user logs in
           router.push("/");
           localStorage.setItem("session", JSON.stringify(session));
-          setState((state) => ({ ...state, session }));
+          setState({
+            ...state,
+            session,
+          });
         }
       }
     );
@@ -89,6 +92,61 @@ const login = () => {
           </nav>
         </div>
         <div className=" bg-[#07173ef2] w-full px-[5%]  sm:w-11/12 xl:w-1/2 md:w-3/4 min-h-screen mx-auto transition-opacity opacity-100 py-10 border-2 border-[#4f4f4f3c]">
+          <div className="h-[500px]">
+            <h1 className="text-lg">
+              Welcome to Reko: <br /> Your Personalized Music Recommendation
+              Station
+            </h1>
+            <img src="/images/iphone-mockup.png" alt="" />
+          </div>
+          <div>
+            <p>
+              Discover the perfect soundtrack for every moment with Reko, a
+              revolutionary music recommendation application powered by OpenAI's
+              GPT-3.5 language model. Elevate your music experience as Reko
+              tailors song suggestions specifically to your unique tastes and
+              preferences. Whether you're searching for a track that matches
+              your mood, captures a particular feeling, or fulfills a specific
+              musical inquiry, Reko is here to serve you.
+            </p>
+            <div className="flex">
+              <div>
+                <img src="" alt="" />
+                <div>
+                  <h3>🎼 Personalized Song Recommendations:</h3>
+                  <p>
+                    Harnessing the power of GPT-3, Reko generates tailored song
+                    recommendations that align perfectly with your mood,
+                    feeling, or specific query. Explore a world of music catered
+                    just for you.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <img src="" alt="" />
+                <div>
+                  <h3>🔊 Preview Playback:</h3>
+                  <p>
+                    Curiosity piqued by a recommended track? Dive in deeper and
+                    listen to a preview right within the app. Experience a
+                    snippet of the song before deciding to explore further.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <img src="" alt="" />
+                <div>
+                  <h3>🔗 Spotify Integration:</h3>
+                  <p>
+                    Love what you hear? With just a single click, seamlessly
+                    access the full song on Spotify. Let Reko be your gateway to
+                    discovering and enjoying your favorite tracks on one of the
+                    world's leading music platforms.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="  m-auto my-4 md:w-3/4   p-5 bg-[#ffffff2c]">
             <div className="flex flex-col items-center justify-center">
               <h1 className="text-2xl font-bold">Login</h1>
@@ -96,26 +154,28 @@ const login = () => {
             {loading ? (
               <p>Loading ...</p>
             ) : (
-              <Auth
-                supabaseClient={supabase}
-                providers={["google", "github", "spotify"]}
-                appearance={{
-                  style: {
-                    anchor: {
-                      color: "#ffffff",
+              <>
+                <Auth
+                  supabaseClient={supabase}
+                  providers={["google", "github", "spotify"]}
+                  appearance={{
+                    style: {
+                      anchor: {
+                        color: "#ffffff",
+                      },
+                      label: {
+                        color: "#ffffff",
+                      },
+                      button: {
+                        backgroundColor: "#07173e",
+                        border: "none",
+                        color: "#ffffff",
+                      },
                     },
-                    label: {
-                      color: "#ffffff",
-                    },
-                    button: {
-                      backgroundColor: "#07173e",
-                      border: "none",
-                      color: "#ffffff",
-                    },
-                  },
-                  theme: ThemeSupa,
-                }}
-              />
+                    theme: ThemeSupa,
+                  }}
+                />
+              </>
             )}
           </div>
         </div>
