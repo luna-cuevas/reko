@@ -67,6 +67,7 @@ export default function Home() {
       tracks: [],
       isPlaying: false,
     });
+    playTrack(state.track);
   };
 
   const handleSession = (session: any) => {
@@ -84,6 +85,10 @@ export default function Home() {
     setLoading(false);
     router.push("/");
   };
+
+  useEffect(() => {
+    console.log("state", state);
+  }, [state]);
 
   const counter = useRef(0);
 
@@ -437,25 +442,24 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+                {state.isPlaying && !showSpotifyLogin ? (
+                  <div>
+                    <MediaPlayer
+                      isPlaying={state.isPlaying}
+                      audioURL={state.audioURL}
+                      playTrack={playTrack}
+                    />
+                  </div>
+                ) : (
+                  showSpotifyLogin && (
+                    <SpotifyLoginPopUp
+                      authorizeWithSpotify={authorizeWithSpotify}
+                      setShowSpotifyLogin={setShowSpotifyLogin}
+                      showSpotifyLogin={showSpotifyLogin}
+                    />
+                  )
+                )}
               </>
-            )}
-
-            {state.isPlaying && !showSpotifyLogin ? (
-              <div>
-                <MediaPlayer
-                  isPlaying={state.isPlaying}
-                  audioURL={state.audioURL}
-                  playTrack={playTrack}
-                />
-              </div>
-            ) : (
-              showSpotifyLogin && (
-                <SpotifyLoginPopUp
-                  authorizeWithSpotify={authorizeWithSpotify}
-                  setShowSpotifyLogin={setShowSpotifyLogin}
-                  showSpotifyLogin={showSpotifyLogin}
-                />
-              )
             )}
           </div>
         </div>

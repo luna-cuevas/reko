@@ -393,7 +393,7 @@ export const useSpotify = (): UseSpotifyHook => {
             .catch((error) => {
               console.error(`Error playing track: ${error.message}`);
             });
-        } else {
+        } else if (state.isPlaying) {
           // If the selected track is already playing, pause playback
           fetch(
             `https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`,
@@ -430,6 +430,10 @@ export const useSpotify = (): UseSpotifyHook => {
       setShowSpotifyLogin(true);
     }
   };
+
+  // useEffect(() => {
+  //   playTrack(state.track);
+  // }, [state.track]);
 
   return {
     searchForSong,
