@@ -1,6 +1,8 @@
 import "./globals.css";
 import { StateProvider } from "../context/StateContext";
 import type { AppProps } from "next/app";
+import CookieConsent from "react-cookie-consent";
+import useMatchMedia from "../utils/useMatchMedia";
 
 export const metadata = {
   title: "Create Next App",
@@ -8,8 +10,34 @@ export const metadata = {
 };
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const { isMobile, isTablet, isLaptop, isDesktop, isWideScreen, mediaMatch } =
+    useMatchMedia();
+
+  console.log("isMobile", isMobile);
+
   return (
     <StateProvider>
+      <CookieConsent
+        style={{
+          background: "#192c5e",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "10px",
+        }}
+        contentStyle={{
+          flex: "none",
+          width: isMobile ? "60%" : "fit-content",
+        }}
+        buttonStyle={{
+          background: "rgb(73, 85, 113)",
+          color: "white",
+          fontSize: "13px",
+          width: "fit-content",
+        }}>
+        This website uses cookies to enhance the user experience.
+      </CookieConsent>
+
       <Component {...pageProps} />
     </StateProvider>
   );

@@ -72,11 +72,11 @@ const initialState: StateType = {
   progress: 0,
 };
 
-const StateContext = createContext<StateContextType | undefined>(undefined);
-
 type StateProviderProps = {
   children: ReactNode;
 };
+
+const StateContext = createContext<StateContextType | undefined>(undefined);
 
 const StateProvider: React.FC<StateProviderProps> = ({ children }) => {
   const [state, setState] = useState<StateType>(initialState);
