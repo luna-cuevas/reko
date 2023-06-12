@@ -44,7 +44,7 @@ export const useSpotify = (): UseSpotifyHook => {
     setSession(
       state.session || JSON.parse(localStorage.getItem("session") || "{}")
     );
-  }, [state.session]);
+  }, []);
 
   const handleUserAuthorizationCode = (userAuthorizationCode: string) => {
     setState({

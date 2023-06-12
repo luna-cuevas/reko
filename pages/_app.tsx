@@ -13,8 +13,6 @@ function MyApp({ Component, pageProps }: AppProps) {
   const { isMobile, isTablet, isLaptop, isDesktop, isWideScreen, mediaMatch } =
     useMatchMedia();
 
-  console.log("isMobile", isMobile);
-
   return (
     <StateProvider>
       <CookieConsent
