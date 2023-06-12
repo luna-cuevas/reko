@@ -346,7 +346,7 @@ export default function Home() {
         transition: "background-color 2s ease-in-out",
       }}
       className="h-fit flex flex-col mx-[5%] sm:mx-auto justify-center min-h-screen text-white bg-transparent">
-      {imageIsLoading && imageUrl != "" ? (
+      {imageIsLoading && imageUrl == "" ? (
         <div className="bg-[#07173e] transition-opacity opacity-100 -z-10 fixed top-0 left-0 w-full h-full" />
       ) : (
         <div className="-z-10 fixed top-0 left-0 w-full h-full transition-all opacity-100">

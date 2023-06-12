@@ -42,7 +42,7 @@ export const useSpotify = (): UseSpotifyHook => {
   useEffect(() => {
     // get session from local storage or session state
     setSession(
-      JSON.parse(localStorage.getItem("session") || state.session) || "{}"
+      state.session || JSON.parse(localStorage.getItem("session") || "{}")
     );
   }, [state.session]);
 
