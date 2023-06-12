@@ -124,10 +124,6 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    console.log("state", state);
-  }, [state]);
-
   const counter = useRef(0);
 
   const generateImage = async (genreString: any) => {
@@ -313,7 +309,8 @@ export default function Home() {
     // Set the loading state to true to disable the button
 
     setIsRequestLoading(true);
-    console.log("isRequestLoading", isRequestLoading);
+    // console.log("isRequestLoading", isRequestLoading);
+    console.log("Prompt:", prompt);
 
     if (sensitivity <= "0.9") {
       await generateAnswer(input, prompt, sensitivity).then(() => {

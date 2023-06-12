@@ -79,8 +79,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ playTrack }) => {
     toggleLikedSong(artistsArray, songName);
   };
 
-  console.log("progress", progress);
-
   const updateProgress = () => {
     if (audioRef.current && state.previewURL) {
       const { currentTime, duration } = audioRef.current;
