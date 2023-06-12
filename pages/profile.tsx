@@ -121,7 +121,7 @@ const profile = () => {
     };
 
     fetchLikedSongs();
-  }, [session]);
+  }, [session, likedSongs]);
 
   return (
     <main

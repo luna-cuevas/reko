@@ -137,7 +137,7 @@ const login = () => {
           <h1 className="md:text-xl text-lg text-center break-words">
             Your Personalized Music Recommendation Station
           </h1>
-          <div className="md:h-[400px] my-8 md:my-0 flex w-full">
+          <div className="max-h-[400px] my-6 md:my-4 flex w-full">
             <img
               className=" w-1/2 m-auto"
               src="/images/laptop-mockup.png"
@@ -150,53 +150,111 @@ const login = () => {
             />
           </div>
 
-          <div className="mt-10">
-            <p>
-              Elevate your music experience as Reko tailors song suggestions
+          <div className="flex flex-col mt-10 text-center">
+            <p className="md:my-6 md:text-xl text-md my-4">
+              Elevate your music experience as Reko tailors song suggestions{" "}
               specifically to your unique tastes and preferences.
             </p>
-            <p>
+            <div className="justify-evenly flex w-full m-auto overflow-hidden">
+              <div className=" flex w-1/5">
+                <img
+                  className="object-contain m-auto h-[80px] w-1/2"
+                  src="/images/typing.png"
+                  alt=""
+                />
+                <img
+                  className="object-contain w-1/4 mx-auto"
+                  src="/images/arrow.png"
+                  alt=""
+                />
+              </div>
+              <div className=" h-[80px] m-auto flex w-1/5">
+                <img
+                  className="object-contain w-1/2"
+                  src="/images/chatgpt-icon.png"
+                  alt=""
+                />
+                <img
+                  className="object-contain w-1/4 mx-auto"
+                  src="/images/arrow.png"
+                  alt=""
+                />
+              </div>
+              <div className="h-[80px] m-auto flex w-1/5">
+                <img
+                  className="object-contain w-1/2"
+                  src="/images/gpt-results.png"
+                  alt=""
+                />
+                <img
+                  className="object-contain w-1/4 mx-auto"
+                  src="/images/arrow.png"
+                  alt=""
+                />
+              </div>
+              <div className="flex h-[60px] m-auto w-1/5">
+                <img
+                  className="object-contain w-1/2"
+                  src="/images/heart-icon-red.png"
+                  alt=""
+                />
+                <img
+                  className="object-contain w-1/4 mx-auto"
+                  src="/images/arrow.png"
+                  alt=""
+                />
+              </div>
+              <div className="flex w-1/5">
+                <img
+                  className="object-contain w-1/2"
+                  src="/images/improvement.png"
+                  alt=""
+                />
+              </div>
+            </div>
+            <p className="md:my-6 md:text-xl text-md my-4">
               Whether you're searching for a track that matches your mood,
               captures a particular feeling, or fulfills a specific musical
               inquiry, Reko is here to serve you.
             </p>
-            <div className="flex mt-10">
-              <div>
-                <img src="" alt="" />
-                <div>
+            {/* <div className="flex flex-col gap-4 m-auto">
+              <div className="flex w-full gap-6">
+                <div className="w-1/2">
+                  <img
+                    className="object-contain w-1/6"
+                    src="/images/personalized.png"
+                    alt=""
+                  />
+                </div>
+                <div className="w-1/2 py-4 bg-black">
                   <h3>🎼 Personalized Song Recommendations:</h3>
                   <p>
-                    Harnessing the power of GPT-3, Reko generates tailored song
-                    recommendations that align perfectly with your mood,
-                    feeling, or specific query. Explore a world of music catered
-                    just for you.
+                    Reko generates tailored song recommendations that align
+                    perfectly with your mood.
                   </p>
                 </div>
               </div>
-              <div>
+              <div className="w-full">
                 <img src="" alt="" />
                 <div>
-                  <h3>🔊 Preview Playback:</h3>
+                  <h3>🔊 AI Generated Art:</h3>
                   <p>
-                    Curiosity piqued by a recommended track? Dive in deeper and
-                    listen to a preview right within the app. Experience a
-                    snippet of the song before deciding to explore further.
+                    Reko's AI generates unique art for each search request. The
+                    art is inspired by the genres and moods of the songs.
                   </p>
                 </div>
               </div>
-              <div>
+              <div className="w-full">
                 <img src="" alt="" />
                 <div>
                   <h3>🔗 Spotify Integration:</h3>
                   <p>
-                    Love what you hear? With just a single click, seamlessly
-                    access the full song on Spotify. Let Reko be your gateway to
-                    discovering and enjoying your favorite tracks on one of the
-                    world's leading music platforms.
+                    Love what you hear? With just a few clicks, seamlessly add
+                    your liked songs to your Spotify account.
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

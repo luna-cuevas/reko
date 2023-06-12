@@ -5,6 +5,7 @@ type StateType = {
   isPlaying: boolean;
   audioURL: string;
   tracks: any[];
+  isPaused: boolean;
   devCredentials: string;
   session: any;
   likedSongs: any[];
@@ -43,6 +44,7 @@ const initialState: StateType = {
   isPlaying: false,
   audioURL: "",
   tracks: [],
+  isPaused: false,
   devCredentials: "",
   session: {},
   likedSongs: [],

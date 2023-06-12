@@ -16,13 +16,13 @@ const SpotifyCallback = () => {
 
     // Store access token in state/context
     console.log("Handling state session...", JSON.parse(storedSessionStr));
-    setState((prevState) => ({
-      ...prevState,
+    setState({
+      ...state,
       session: JSON.parse(storedSessionStr),
       expiresAt: JSON.parse(storedSessionStr)?.expires_at,
       devCredentials: localStorage.getItem("devCredentials") || "",
       userAuthorizationCode: accessToken,
-    }));
+    });
     console.log("Handling localStorage session");
     localStorage.setItem("session", storedSessionStr);
     localStorage.setItem("expiresAt", JSON.parse(storedSessionStr)?.expires_at);

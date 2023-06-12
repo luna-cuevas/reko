@@ -55,19 +55,45 @@ export default function Home() {
         }`
       : `Give me the exact song that matches this query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash.  Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n`;
 
-  const loadAllSongsFromLocalStorage = (): TrackData[] => {
-    const storedAllSongs = localStorage.getItem("allSongs");
-    return storedAllSongs ? JSON.parse(storedAllSongs) : [];
-  };
-
   const clearTracks = () => {
     localStorage.removeItem("tracks");
+    localStorage.removeItem("allSongs");
     setState({
       ...state,
       tracks: [],
       isPlaying: false,
+      isPaused: true,
+      track: {
+        duration_ms: 0,
+        preview_url: "",
+        album: {
+          images: [
+            {
+              url: "",
+            },
+          ],
+        },
+        name: "",
+        artists: [
+          {
+            name: "",
+          },
+        ],
+      },
     });
-    playTrack(state.track);
+
+    console.log("Pausing...");
+    fetch(
+      `https://api.spotify.com/v1/me/player/pause?device_id=${state.deviceID}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.userAuthorizationCode}`,
+        },
+      }
+    );
+    console.log("Paused");
   };
 
   const handleSession = (session: any) => {
@@ -191,13 +217,26 @@ export default function Home() {
     //   }
     // );
 
+    const loadAllSongsFromLocalStorage = (): TrackData[] => {
+      const storedAllSongs = localStorage.getItem("allSongs");
+      return storedAllSongs ? JSON.parse(storedAllSongs) : [];
+    };
+
     const localAllSongs = loadAllSongsFromLocalStorage();
+
     if (localAllSongs && localAllSongs.length > 0) {
       setState({ ...state, tracks: localAllSongs });
     }
 
     // return () => authListener.subscription.unsubscribe();
   }, []);
+
+  // useEffect(() => {
+  //   // Save the tracks to local storage whenever state.tracks changes
+  //   if (state.tracks.length > 0) {
+  //     localStorage.setItem("tracks", JSON.stringify(state.tracks));
+  //   }
+  // }, [state.tracks]);
 
   useEffect(() => {
     const likedSongsFromLocalStorage = localStorage.getItem("likedSongs");
@@ -226,13 +265,6 @@ export default function Home() {
       console.log("No tracks in localStorage");
     }
   }, []); // Empty dependency array to run only on the initial render
-
-  useEffect(() => {
-    // Save the tracks to local storage whenever state.tracks changes
-    if (state.tracks.length > 0) {
-      localStorage.setItem("tracks", JSON.stringify(state.tracks));
-    }
-  }, [state.tracks]);
 
   useEffect(() => {
     if (sanitizedTracks !== "") {
