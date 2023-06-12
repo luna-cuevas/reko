@@ -306,7 +306,7 @@ export const useSpotify = (): UseSpotifyHook => {
         const data: SpotifyAPIResponse = await response.json();
 
         const newTracks = data.tracks?.items || [];
-        console.log("new tracks", newTracks);
+        // console.log("new tracks", newTracks);
         const allTracks = [...state.tracks, ...newTracks];
         setState({ ...state, newTracks: newTracks, tracks: allTracks });
 
