@@ -5,6 +5,7 @@ type StateType = {
   isPlaying: boolean;
   audioURL: string;
   tracks: any[];
+  isPaused: boolean;
   devCredentials: string;
   session: any;
   likedSongs: any[];
@@ -43,6 +44,7 @@ const initialState: StateType = {
   isPlaying: false,
   audioURL: "",
   tracks: [],
+  isPaused: false,
   devCredentials: "",
   session: {},
   likedSongs: [],
@@ -72,11 +74,11 @@ const initialState: StateType = {
   progress: 0,
 };
 
-const StateContext = createContext<StateContextType | undefined>(undefined);
-
 type StateProviderProps = {
   children: ReactNode;
 };
+
+const StateContext = createContext<StateContextType | undefined>(undefined);
 
 const StateProvider: React.FC<StateProviderProps> = ({ children }) => {
   const [state, setState] = useState<StateType>(initialState);

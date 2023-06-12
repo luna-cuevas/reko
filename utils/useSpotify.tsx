@@ -41,12 +41,10 @@ export const useSpotify = (): UseSpotifyHook => {
 
   useEffect(() => {
     // get session from local storage or session state
-    setSession(localStorage.getItem("session") || state.session || "{}");
+    setSession(
+      JSON.parse(localStorage.getItem("session") || state.session) || "{}"
+    );
   }, [state.session]);
-
-  const saveAllSongsToLocalStorage = (tracks: TrackData[]) => {
-    localStorage.setItem("tracks", JSON.stringify(tracks));
-  };
 
   const handleUserAuthorizationCode = (userAuthorizationCode: string) => {
     setState({
@@ -311,6 +309,11 @@ export const useSpotify = (): UseSpotifyHook => {
         console.log("new tracks", newTracks);
         const allTracks = [...state.tracks, ...newTracks];
         setState({ ...state, newTracks: newTracks, tracks: allTracks });
+
+        const saveAllSongsToLocalStorage = (tracks: TrackData[]) => {
+          localStorage.setItem("tracks", JSON.stringify(tracks));
+        };
+
         saveAllSongsToLocalStorage(allTracks); // Save to local storage
 
         // Get a list of artist IDs from the tracks.
@@ -378,6 +381,7 @@ export const useSpotify = (): UseSpotifyHook => {
                   audioURL: trackUri,
                   isPlaying: true,
                   track: track,
+                  deviceID: deviceId,
                   userAuthorizationCode: accessToken,
                 });
                 setUserAuthorizationCode(accessToken);
@@ -430,10 +434,6 @@ export const useSpotify = (): UseSpotifyHook => {
       setShowSpotifyLogin(true);
     }
   };
-
-  // useEffect(() => {
-  //   playTrack(state.track);
-  // }, [state.track]);
 
   return {
     searchForSong,

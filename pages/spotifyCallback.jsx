@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useStateContext } from "../context/StateContext";
 
 const SpotifyCallback = () => {
-  const { setState } = useStateContext();
+  const { setState, state } = useStateContext();
   const router = useRouter();
 
   useEffect(() => {
@@ -12,11 +12,20 @@ const SpotifyCallback = () => {
     const params = new URLSearchParams(hashFragment);
     const accessToken = params.get("access_token");
 
+    const storedSessionStr = localStorage.getItem("session");
+
     // Store access token in state/context
-    setState((prevState) => ({
-      ...prevState,
+    console.log("Handling state session...", JSON.parse(storedSessionStr));
+    setState({
+      ...state,
+      session: JSON.parse(storedSessionStr),
+      expiresAt: JSON.parse(storedSessionStr)?.expires_at,
+      devCredentials: localStorage.getItem("devCredentials") || "",
       userAuthorizationCode: accessToken,
-    }));
+    });
+    console.log("Handling localStorage session");
+    localStorage.setItem("session", storedSessionStr);
+    localStorage.setItem("expiresAt", JSON.parse(storedSessionStr)?.expires_at);
 
     localStorage.setItem("userAuthorizationCode", accessToken);
 

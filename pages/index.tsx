@@ -55,35 +55,73 @@ export default function Home() {
         }`
       : `Give me the exact song that matches this query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash.  Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n`;
 
-  const loadAllSongsFromLocalStorage = (): TrackData[] => {
-    const storedAllSongs = localStorage.getItem("allSongs");
-    return storedAllSongs ? JSON.parse(storedAllSongs) : [];
-  };
-
   const clearTracks = () => {
     localStorage.removeItem("tracks");
+    localStorage.removeItem("allSongs");
     setState({
       ...state,
       tracks: [],
       isPlaying: false,
+      isPaused: true,
+      track: {
+        duration_ms: 0,
+        preview_url: "",
+        album: {
+          images: [
+            {
+              url: "",
+            },
+          ],
+        },
+        name: "",
+        artists: [
+          {
+            name: "",
+          },
+        ],
+      },
     });
-    playTrack(state.track);
+
+    console.log("Pausing...");
+    fetch(
+      `https://api.spotify.com/v1/me/player/pause?device_id=${state.deviceID}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.userAuthorizationCode}`,
+        },
+      }
+    );
+    console.log("Paused");
   };
 
   const handleSession = (session: any) => {
-    console.log("Handling state session...");
-    setState({
-      ...state,
-      session: JSON.stringify(session),
-      expiresAt: session?.expires_at,
-      devCredentials: localStorage.getItem("devCredentials") || "",
-    });
-    console.log("Handling localStorage session");
-    localStorage.setItem("session", JSON.stringify(session));
-    localStorage.setItem("expiresAt", session?.expires_at);
+    if (typeof session === "string") {
+      try {
+        const sessionObj = JSON.parse(session);
+        console.log("Handling state session...", sessionObj);
+        setState({
+          ...state,
+          session: sessionObj,
+          expiresAt: sessionObj?.expires_at,
+          devCredentials: localStorage.getItem("devCredentials") || "",
+        });
+        console.log("Handling localStorage session");
+        localStorage.setItem("session", session);
+        localStorage.setItem("expiresAt", sessionObj?.expires_at);
 
-    setLoading(false);
-    router.push("/");
+        setLoading(false);
+        router.push("/");
+      } catch (error) {
+        console.error("Error parsing session:", error);
+      }
+    } else {
+      console.error(
+        "Invalid session type. Expected string, received:",
+        typeof session
+      );
+    }
   };
 
   useEffect(() => {
@@ -150,7 +188,7 @@ export default function Home() {
 
     if (storedSessionStr) {
       console.log("Session exists in localStorage");
-      handleSession(JSON.parse(storedSessionStr));
+      handleSession(storedSessionStr);
     } else {
       console.log("No session in localStorage");
       supabase.auth.getSession().then((currentSession) => {
@@ -158,46 +196,47 @@ export default function Home() {
       });
     }
 
-    // Retrieve likedSongs from local storage or fallback to state.likedSongs
+    // const { data: authListener } = supabase.auth.onAuthStateChange(
+    //   (event, session) => {
+    //     if (event === "INITIAL_SESSION" && session !== null) {
+    //       const storedSessionStr = localStorage.getItem("session");
+    //       if (!storedSessionStr) {
+    //         console.log("Session does not exist in localStorage");
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "INITIAL_SESSION" && session) {
-          // Access the Spotify access token
+    //         setState((prevState: any) => ({
+    //           ...prevState,
+    //           session: JSON.stringify(session),
+    //           expiresAt: session?.expires_at,
+    //           devCredentials: localStorage.getItem("devCredentials") || "",
+    //         }));
 
-          const storedSessionStr = localStorage.getItem("session");
-          if (!storedSessionStr) {
-            console.log("Session does not exist in localStorage");
+    //         localStorage.setItem("session", JSON.stringify(session));
+    //       }
+    //       console.log("setting signed in session", session, event);
+    //     }
+    //   }
+    // );
 
-            setState((prevState: any) => ({
-              ...prevState,
-              session: JSON.stringify(session),
-              expiresAt: session?.expires_at,
-              devCredentials: localStorage.getItem("devCredentials") || "",
-            }));
-
-            localStorage.setItem("session", JSON.stringify(session));
-          }
-          console.log("setting signed in session", session, event);
-        } else {
-          router.push("/login");
-        }
-      }
-    );
+    const loadAllSongsFromLocalStorage = (): TrackData[] => {
+      const storedAllSongs = localStorage.getItem("allSongs");
+      return storedAllSongs ? JSON.parse(storedAllSongs) : [];
+    };
 
     const localAllSongs = loadAllSongsFromLocalStorage();
+
     if (localAllSongs && localAllSongs.length > 0) {
-      setState((prevState) => ({ ...prevState, tracks: localAllSongs }));
+      setState({ ...state, tracks: localAllSongs });
     }
 
-    return () => authListener.subscription.unsubscribe();
+    // return () => authListener.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (state.session !== null) {
-      router.push("/");
-    }
-  }, [state.session]);
+  // useEffect(() => {
+  //   // Save the tracks to local storage whenever state.tracks changes
+  //   if (state.tracks.length > 0) {
+  //     localStorage.setItem("tracks", JSON.stringify(state.tracks));
+  //   }
+  // }, [state.tracks]);
 
   useEffect(() => {
     const likedSongsFromLocalStorage = localStorage.getItem("likedSongs");
@@ -205,7 +244,6 @@ export default function Home() {
       ? JSON.parse(likedSongsFromLocalStorage)
       : state.likedSongs;
 
-    // Extract and filter artists if likedSongs is available, otherwise use the value from local storage
     const allArtistsString: string = likedSongs
       ? likedSongs
           .map((song) => song.artists) // `song.artists` is already an array of artist names
@@ -222,18 +260,11 @@ export default function Home() {
     const localTracksStr = localStorage.getItem("tracks");
     if (localTracksStr) {
       const localTracks = JSON.parse(localTracksStr);
-      setState((prevState) => ({ ...prevState, tracks: localTracks }));
+      setState({ ...state, tracks: localTracks });
     } else {
       console.log("No tracks in localStorage");
     }
   }, []); // Empty dependency array to run only on the initial render
-
-  useEffect(() => {
-    // Save the tracks to local storage whenever state.tracks changes
-    if (state.tracks.length > 0) {
-      localStorage.setItem("tracks", JSON.stringify(state.tracks));
-    }
-  }, [state.tracks]);
 
   useEffect(() => {
     if (sanitizedTracks !== "") {

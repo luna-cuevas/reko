@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useStateContext } from "../context/StateContext";
 import { supabase } from "../lib/supabaseClient";
+import useMatchMedia from "../utils/useMatchMedia";
+// client side only
 
 type MediaPlayerProps = {
   audioURL: string;
@@ -17,6 +19,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ playTrack }) => {
   const [currentTime, setCurrentTime] = useState(0); // Track the currentTime manually
   const [likedSongs, setLikedSongs] = useState([]);
   const { name, artists } = state.track;
+  const { isMobile } = useMatchMedia();
 
   const session = JSON.parse(
     localStorage.getItem("session") || state.session || "{}"
@@ -136,43 +139,62 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ playTrack }) => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full py-2 bg-[#07173ede] shadow-lg">
-      <div className="flex items-center justify-center">
-        <div className="flex w-1/4">
+    <div className="fixed bottom-0 left-0 w-full p-2 bg-[#07173ede] shadow-lg">
+      <div className="flex items-center justify-center gap-4">
+        <div className="md:w-1/3 md:justify-end flex w-2/3">
           <img
             className="w-[60px]"
             src={state.track.album.images[0].url}
             alt=""
           />
-          <div className="flex flex-col m-auto ml-2">
+          <div className="w-fit flex flex-col my-auto ml-2">
             <p>{state.track.name}</p>
             <p className="text-xs text-gray-400">
               {state.track.artists[0].name}
             </p>
           </div>
         </div>
-        <div className="flex flex-col w-1/3">
-          <button
-            className="focus:outline-none mx-4 mb-4 text-blue-500"
-            onClick={() => {
-              if (state.previewURL) {
-                playPausePreview(state.track.preview_url);
-              }
 
-              if (state.previewURL == "") {
-                playTrack(state.track);
-              }
-            }}>
-            {state.isPlaying ? "Pause" : "Play"}
-          </button>
-          <div className="w-full h-2 mx-4 bg-gray-200 rounded-full">
-            <div
-              className="h-2 bg-blue-500 rounded-full"
-              style={{ width: `${progress}%` }}></div>
+        {!isMobile && (
+          <div className="flex flex-col w-1/3">
+            <button
+              className="focus:outline-none mx-4 mb-4 text-blue-500"
+              onClick={() => {
+                if (state.previewURL) {
+                  playPausePreview(state.track.preview_url);
+                }
+
+                if (state.previewURL == "") {
+                  playTrack(state.track);
+                }
+              }}>
+              {state.isPlaying ? "Pause" : "Play"}
+            </button>
+            <div className=" h-2 mx-4 bg-gray-200 rounded-full">
+              <div
+                className="h-2 bg-blue-500 rounded-full"
+                style={{ width: `${progress}%` }}></div>
+            </div>
           </div>
-        </div>
-        <div onClick={handleLikeClick} className="flex justify-end w-1/4">
+        )}
+        <div className="md:w-1/3 md:justify-start flex justify-end align-bottom">
+          {isMobile && (
+            <button
+              className="focus:outline-none mx-4 text-blue-500"
+              onClick={() => {
+                if (state.previewURL) {
+                  playPausePreview(state.track.preview_url);
+                }
+
+                if (state.previewURL == "") {
+                  playTrack(state.track);
+                }
+              }}>
+              {state.isPlaying ? "Pause" : "Play"}
+            </button>
+          )}
           <img
+            onClick={handleLikeClick}
             className="max-h-[30px] my-auto h-full"
             src={
               isLiked ? "/images/heart-icon-red.png" : "/images/heart-icon.png"
