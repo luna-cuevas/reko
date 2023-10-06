@@ -1,11 +1,7 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useSpotifySDK from "../lib/useSpotifySDK";
 import { useStateContext } from "../context/StateContext";
-import {
-  TrackData,
-  OpenAIAPIResponse,
-  SpotifyAPIResponse,
-} from "../components/types";
+import { TrackData, SpotifyAPIResponse } from "../components/types";
 import { supabase } from "../lib/supabaseClient";
 
 // Define the TypeScript type for the useSpotify hook's return value.

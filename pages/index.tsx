@@ -55,6 +55,8 @@ export default function Home() {
         }`
       : `Give me the exact song that matches this query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash.  Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n`;
 
+  console.log("prompt", prompt);
+
   const clearTracks = () => {
     localStorage.removeItem("tracks");
     localStorage.removeItem("allSongs");

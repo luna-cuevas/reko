@@ -98,13 +98,13 @@ const profile = () => {
   useEffect(() => {
     const fetchLikedSongs = async () => {
       if (session?.user.id) {
-        console.log("session.user.id", session.user.id);
+        // console.log("session.user.id", session.user.id);
         const { data: likedSongs, error } = await supabase
           .from("liked_songs")
           .select("*")
           .eq("user_id", session.user.id);
 
-        console.log("likedSongs", likedSongs);
+        // console.log("likedSongs", likedSongs);
 
         if (error) {
           console.error("Error fetching liked songs:", error.message);

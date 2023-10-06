@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { useStateContext } from "../context/StateContext";
-import { supabase } from "../lib/supabaseClient";
+import React, { useEffect, useState } from 'react';
+import { useStateContext } from '../context/StateContext';
+import { supabase } from '../lib/supabaseClient';
 
 type TrackProps = {
   track: {
@@ -29,16 +29,16 @@ const Track: React.FC<TrackProps> = ({
   const { images } = album;
   const { state, setState } = useStateContext();
   const session = JSON.parse(
-    localStorage.getItem("session") || state.session || "{}"
+    localStorage.getItem('session') || state.session || '{}'
   );
   const [likedSongs, setLikedSongs] = useState([]);
 
   useEffect(() => {
     const fetchLikedSongs = async () => {
       const { data: databaseLikedSongs, error } = await supabase
-        .from("liked_songs")
-        .select("*")
-        .eq("user_id", session.user.id);
+        .from('liked_songs')
+        .select('*')
+        .eq('user_id', session.user.id);
       setLikedSongs(databaseLikedSongs as any);
       setState({
         ...state,
@@ -63,14 +63,14 @@ const Track: React.FC<TrackProps> = ({
 
   const toggleLikedSong = async (artists: string[], songName: string) => {
     if (!session || !session.user || !session.user.id) {
-      console.error("Session or user is undefined");
+      console.error('Session or user is undefined');
       return;
     }
 
     try {
-      const response = await fetch("/api/likedSongs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/likedSongs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: session.user.id,
           track,
@@ -85,10 +85,10 @@ const Track: React.FC<TrackProps> = ({
         ...state,
         likedSongs: data.likedSongs,
       });
-      localStorage.setItem("likedSongs", JSON.stringify(data.likedSongs));
+      localStorage.setItem('likedSongs', JSON.stringify(data.likedSongs));
       setLikedSongs(data.likedSongs);
     } catch (error) {
-      console.error("Error adding liked song:", error);
+      console.error('Error adding liked song:', error);
     }
   };
 
@@ -111,7 +111,7 @@ const Track: React.FC<TrackProps> = ({
                 previewURL: preview_url,
                 track: track,
               });
-              console.log("no auth code");
+              console.log('no auth code');
               setShowSpotifyLogin(true);
             }
           }}
@@ -129,7 +129,7 @@ const Track: React.FC<TrackProps> = ({
             <p>
               {artists
                 .map((artist) => artist.name)
-                .join(", ")
+                .join(', ')
                 .slice(0, 100)}
             </p>
           </div>
@@ -140,7 +140,7 @@ const Track: React.FC<TrackProps> = ({
           <img
             className="max-h-[30px] my-auto h-full"
             src={
-              isLiked ? "/images/heart-icon-red.png" : "/images/heart-icon.png"
+              isLiked ? '/images/heart-icon-red.png' : '/images/heart-icon.png'
             }
             alt=""
           />
