@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import useSpotifySDK from "../lib/useSpotifySDK";
-import { useStateContext } from "../context/StateContext";
-import { TrackData, SpotifyAPIResponse } from "../components/types";
-import { supabase } from "../lib/supabaseClient";
+import { useEffect, useState } from 'react';
+import useSpotifySDK from '../lib/useSpotifySDK';
+import { useStateContext } from '../context/StateContext';
+import { TrackData, SpotifyAPIResponse } from '../components/types';
+import { supabase } from '../lib/supabaseClient';
 
 // Define the TypeScript type for the useSpotify hook's return value.
 type UseSpotifyHook = {
@@ -13,7 +13,7 @@ type UseSpotifyHook = {
   authorizeWithSpotify: () => void;
   showSpotifyLogin: boolean;
   setShowSpotifyLogin: (showSpotifyLogin: boolean) => void;
-  genreString: string | "";
+  genreString: string | '';
   exportLikedSongsAsPlaylist: (
     playlistName: string,
     playlistDescription: string,
@@ -26,19 +26,19 @@ export const useSpotify = (): UseSpotifyHook => {
   const [devCredentials, setDevCredentials] = useState<string | null>(null);
   // Other state variables and logic related to Spotify.
   const isSDKReady = useSpotifySDK();
-  const [userAuthorizationCode, setUserAuthorizationCode] = useState("");
+  const [userAuthorizationCode, setUserAuthorizationCode] = useState('');
   const [player, setPlayer] = useState<any>(null);
-  const [deviceId, setDeviceId] = useState("");
+  const [deviceId, setDeviceId] = useState('');
   const [showSpotifyLogin, setShowSpotifyLogin] = useState(false);
   const [currentTrackUri, setCurrentTrackUri] = useState<string | null>(null);
-  const [genreString, setGenreString] = useState("");
+  const [genreString, setGenreString] = useState('');
   const { state, setState } = useStateContext();
   const [session, setSession] = useState<any>({});
 
   useEffect(() => {
     // get session from local storage or session state
     setSession(
-      state.session || JSON.parse(localStorage.getItem("session") || "{}")
+      state.session || JSON.parse(localStorage.getItem('session') || '{}')
     );
   }, []);
 
@@ -49,7 +49,7 @@ export const useSpotify = (): UseSpotifyHook => {
     });
     setUserAuthorizationCode(userAuthorizationCode);
 
-    localStorage.setItem("userAuthorizationCode", userAuthorizationCode);
+    localStorage.setItem('userAuthorizationCode', userAuthorizationCode);
   };
 
   const exportLikedSongsAsPlaylist = async (
@@ -59,25 +59,25 @@ export const useSpotify = (): UseSpotifyHook => {
   ) => {
     // Check if the user is authenticated
     if (!userAuthorizationCode) {
-      console.error("User is not authenticated.");
+      console.error('User is not authenticated.');
       return;
     }
 
     const { data: likedSongs, error } = (await supabase
-      .from("liked_songs")
-      .select("*")
-      .eq("user_id", session.user.id)) as any;
+      .from('liked_songs')
+      .select('*')
+      .eq('user_id', session.user.id)) as any;
 
-    console.log("likedSongs", likedSongs);
+    console.log('likedSongs', likedSongs);
 
     // Check if there are liked songs to export
     if (likedSongs.length === 0) {
-      console.error("No liked songs to export.");
+      console.error('No liked songs to export.');
       return;
     }
 
     try {
-      const response = await fetch("https://api.spotify.com/v1/me", {
+      const response = await fetch('https://api.spotify.com/v1/me', {
         headers: {
           Authorization: `Bearer ${userAuthorizationCode}`,
         },
@@ -90,10 +90,10 @@ export const useSpotify = (): UseSpotifyHook => {
         const createPlaylistResponse = await fetch(
           `https://api.spotify.com/v1/users/${user_id}/playlists`,
           {
-            method: "POST",
+            method: 'POST',
             headers: {
               Authorization: `Bearer ${userAuthorizationCode}`,
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify({
               name: playlistName,
@@ -104,7 +104,7 @@ export const useSpotify = (): UseSpotifyHook => {
         );
 
         if (!createPlaylistResponse.ok) {
-          console.error("Failed to create the playlist.");
+          console.error('Failed to create the playlist.');
           return;
         }
 
@@ -117,10 +117,10 @@ export const useSpotify = (): UseSpotifyHook => {
         const addTracksResponse = await fetch(
           `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
           {
-            method: "POST",
+            method: 'POST',
             headers: {
               Authorization: `Bearer ${userAuthorizationCode}`,
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify({
               uris: trackUris,
@@ -129,33 +129,33 @@ export const useSpotify = (): UseSpotifyHook => {
         );
 
         if (!addTracksResponse.ok) {
-          console.error("Failed to add tracks to the playlist.");
+          console.error('Failed to add tracks to the playlist.');
           return;
         }
 
-        console.log("Exported liked songs as a playlist.");
+        console.log('Exported liked songs as a playlist.');
       } else {
-        console.error("Failed to fetch user info.");
+        console.error('Failed to fetch user info.');
       }
     } catch (error) {
-      console.error("Error fetching user info:", error);
+      console.error('Error fetching user info:', error);
     }
     // };
 
     try {
       // Create the playlist
     } catch (error) {
-      console.error("Error exporting liked songs as a playlist:", error);
+      console.error('Error exporting liked songs as a playlist:', error);
     }
   };
 
   // useEffect hook to handle the initial fetching of the Spotify access token.
   useEffect(() => {
     const userAuthorizationCode =
-      localStorage.getItem("userAuthorizationCode") ||
+      localStorage.getItem('userAuthorizationCode') ||
       state.userAuthorizationCode;
 
-    if (userAuthorizationCode != "") {
+    if (userAuthorizationCode != '') {
       handleUserAuthorizationCode(userAuthorizationCode);
     }
   }, []);
@@ -163,19 +163,19 @@ export const useSpotify = (): UseSpotifyHook => {
   const authorizeWithSpotify = () => {
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
     const redirectUri =
-      process.env.NODE_ENV !== "production"
-        ? "http://localhost:3000/spotifyCallback/"
-        : "https://reko.vercel.app/spotifyCallback/";
+      process.env.NODE_ENV !== 'production'
+        ? 'http://localhost:3001/spotifyCallback/'
+        : 'https://reko.vercel.app/spotifyCallback/';
     const scopes = [
-      "streaming",
-      "user-read-email",
-      "user-read-private",
-      "playlist-modify-public",
-      "playlist-modify-private",
+      'streaming',
+      'user-read-email',
+      'user-read-private',
+      'playlist-modify-public',
+      'playlist-modify-private',
     ];
 
     // Join the scopes with a space separator and encode the parameter
-    const scopeParam = encodeURIComponent(scopes.join(" "));
+    const scopeParam = encodeURIComponent(scopes.join(' '));
 
     // Construct the authorization URL
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
@@ -188,23 +188,23 @@ export const useSpotify = (): UseSpotifyHook => {
   };
 
   useEffect(() => {
-    if (!isSDKReady) return console.log("not ready");
+    if (!isSDKReady) return console.log('not ready');
 
     const playerInstance = new window.Spotify.Player({
-      name: "Reko Player",
+      name: 'Reko Player',
       getOAuthToken: (cb: any) => cb(userAuthorizationCode),
     });
 
     playerInstance.connect();
 
-    playerInstance.on("ready", ({ device_id }: any) => {
+    playerInstance.on('ready', ({ device_id }: any) => {
       setPlayer(playerInstance);
       setDeviceId(device_id);
 
-      localStorage.setItem("player", JSON.stringify(playerInstance));
+      localStorage.setItem('player', JSON.stringify(playerInstance));
     });
 
-    playerInstance.on("player_state_changed", (state: any) => {
+    playerInstance.on('player_state_changed', (state: any) => {
       if (state) {
         const trackUri = state.track_window.current_track.uri;
         setCurrentTrackUri(trackUri);
@@ -226,16 +226,16 @@ export const useSpotify = (): UseSpotifyHook => {
     const client_secret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET; // Use the client secret here
 
     // Construct the authorization header with the client ID and client secret
-    const authHeader = Buffer.from(client_id + ":" + client_secret).toString(
-      "base64"
+    const authHeader = Buffer.from(client_id + ':' + client_secret).toString(
+      'base64'
     );
 
     try {
-      const response = await fetch("https://accounts.spotify.com/api/token", {
-        method: "POST",
+      const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: "Basic " + authHeader, // Use the Basic authorization header
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: 'Basic ' + authHeader, // Use the Basic authorization header
         },
         body: `grant_type=refresh_token&refresh_token=${refresh_token}`, // Include the necessary scopes
       });
@@ -245,23 +245,23 @@ export const useSpotify = (): UseSpotifyHook => {
         const accessToken = data.access_token;
         setState({ ...state, devCredentials: accessToken });
         setDevCredentials(accessToken);
-        localStorage.setItem("devCredentials", accessToken);
-        console.log("dev token refreshed");
+        localStorage.setItem('devCredentials', accessToken);
+        console.log('dev token refreshed');
       } else {
-        console.error("Failed to refresh access token");
+        console.error('Failed to refresh access token');
       }
     } catch (error: any) {
-      console.error("Error refreshing access token:", error.message);
+      console.error('Error refreshing access token:', error.message);
     }
   };
 
   // check if devCredentials is available if not refresh it
   useEffect(() => {
     const devCredentials =
-      localStorage.getItem("devCredentials") || state.devCredentials;
+      localStorage.getItem('devCredentials') || state.devCredentials;
 
     if (!devCredentials) {
-      console.error("Access token not available. Refreshing access token.");
+      console.error('Access token not available. Refreshing access token.');
       refreshDevToken();
     }
   }, []);
@@ -270,7 +270,7 @@ export const useSpotify = (): UseSpotifyHook => {
     if (devCredentials) {
       const interval = setInterval(() => {
         refreshDevToken();
-        console.log("Refreshing access token");
+        console.log('Refreshing access token');
       }, 3600000);
       return () => clearInterval(interval);
     }
@@ -279,27 +279,32 @@ export const useSpotify = (): UseSpotifyHook => {
   // Function to search for a song on Spotify based on sanitized track information.
   const searchForSong = async (tracksArray: any, limit: number) => {
     const devCredentials =
-      localStorage.getItem("devCredentials") ||
+      localStorage.getItem('devCredentials') ||
       process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
 
     if (!devCredentials) {
-      console.error("Access token not available. Refreshing access token.");
+      console.error('Access token not available. Refreshing access token.');
       await refreshDevToken().then(() => {
         searchForSong(tracksArray, limit);
       });
     } else {
-      console.log("searching for song");
+      console.log('searching for song');
       tracksArray.forEach(async (item: any, index: number) => {
         const response = await fetch(
           `https://api.spotify.com/v1/search?q=${item}&type=track&limit=${limit}`,
           {
             headers: {
-              Authorization: "Bearer " + devCredentials || state.devCredentials,
+              Authorization: 'Bearer ' + devCredentials || state.devCredentials,
             },
           }
         );
 
         const data: SpotifyAPIResponse = await response.json();
+
+        if (data.error) {
+          console.error('Error searching for song:', data.error.message);
+          refreshDevToken();
+        }
 
         const newTracks = data.tracks?.items || [];
         // console.log("new tracks", newTracks);
@@ -307,7 +312,7 @@ export const useSpotify = (): UseSpotifyHook => {
         setState({ ...state, newTracks: newTracks, tracks: allTracks });
 
         const saveAllSongsToLocalStorage = (tracks: TrackData[]) => {
-          localStorage.setItem("tracks", JSON.stringify(tracks));
+          localStorage.setItem('tracks', JSON.stringify(tracks));
         };
 
         saveAllSongsToLocalStorage(allTracks); // Save to local storage
@@ -323,11 +328,11 @@ export const useSpotify = (): UseSpotifyHook => {
         // Retrieve artist information using the "Get Several Artists" endpoint.
         const artistResponse = await fetch(
           `https://api.spotify.com/v1/artists?ids=${Array.from(artistIds).join(
-            ","
+            ','
           )}`,
           {
             headers: {
-              Authorization: "Bearer " + devCredentials,
+              Authorization: 'Bearer ' + devCredentials,
             },
           }
         );
@@ -341,7 +346,7 @@ export const useSpotify = (): UseSpotifyHook => {
 
         // Obtain unique genres and join them into a single string.
         const uniqueGenres = Array.from(new Set(allGenres));
-        const genresString = uniqueGenres.join(", ");
+        const genresString = uniqueGenres.join(', ');
 
         // Use genresString to send to DALL·E API or perform other actions.
         setGenreString(genresString);
@@ -351,7 +356,7 @@ export const useSpotify = (): UseSpotifyHook => {
 
   // Function to play or pause a track on Spotify.
   const playTrack = (track: any) => {
-    console.log("initializing play");
+    console.log('initializing play');
     const trackUri = track.uri;
 
     if (player && deviceId) {
@@ -361,10 +366,10 @@ export const useSpotify = (): UseSpotifyHook => {
           fetch(
             `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
             {
-              method: "PUT",
+              method: 'PUT',
               body: JSON.stringify({ uris: [trackUri] }),
               headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
                 Authorization: `Bearer ${accessToken}`,
               },
             }
@@ -381,7 +386,7 @@ export const useSpotify = (): UseSpotifyHook => {
                   userAuthorizationCode: accessToken,
                 });
                 setUserAuthorizationCode(accessToken);
-                console.log("new track playing");
+                console.log('new track playing');
                 // read the response body and parse as JSON
                 return response;
               } else {
@@ -398,9 +403,9 @@ export const useSpotify = (): UseSpotifyHook => {
           fetch(
             `https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`,
             {
-              method: "PUT",
+              method: 'PUT',
               headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
                 Authorization: `Bearer ${accessToken}`,
               },
             }
@@ -412,7 +417,7 @@ export const useSpotify = (): UseSpotifyHook => {
                   isPlaying: false,
                   track: track,
                 });
-                console.log("track paused: ");
+                console.log('track paused: ');
                 setShowSpotifyLogin(false);
               } else {
                 console.error(
@@ -425,7 +430,7 @@ export const useSpotify = (): UseSpotifyHook => {
             });
         }
       });
-      console.log("finishing play");
+      console.log('finishing play');
     } else {
       setShowSpotifyLogin(true);
     }

@@ -1,18 +1,18 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
-import Track from "../components/Track";
-import { supabase } from "../lib/supabaseClient";
-import { Session } from "@supabase/supabase-js";
-import Link from "next/link";
-import MediaPlayer from "../components/mediaPlayer";
-import { useStateContext } from "../context/StateContext";
-import SpotifyLoginPopUp from "../components/spotifyLoginPopUp";
-import { useRouter } from "next/router";
-import { TrackData } from "../components/types";
-import { useSpotify } from "../utils/useSpotify";
-import { generateAIResponse } from "../utils/generateAIResponse";
-import usePreview from "../utils/usePreview";
-import Navigation from "../components/Navigation";
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import Track from '../components/Track';
+import { supabase } from '../lib/supabaseClient';
+import { Session } from '@supabase/supabase-js';
+import Link from 'next/link';
+import MediaPlayer from '../components/mediaPlayer';
+import { useStateContext } from '../context/StateContext';
+import SpotifyLoginPopUp from '../components/spotifyLoginPopUp';
+import { useRouter } from 'next/router';
+import { TrackData } from '../components/types';
+import { useSpotify } from '../utils/useSpotify';
+import { generateAIResponse } from '../utils/generateAIResponse';
+import usePreview from '../utils/usePreview';
+import Navigation from '../components/Navigation';
 
 type Artist = {
   name: string;
@@ -25,15 +25,15 @@ type LikedSong = {
 export default function Home() {
   const { state, setState } = useStateContext();
   const [loading, setLoading] = useState(false);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const router = useRouter();
   const session = state.session;
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState('');
   const [imageIsLoading, setImageIsLoading] = useState(true);
   const [fullImage, setFullImage] = useState(true);
   const [isRequestLoading, setIsRequestLoading] = useState(false);
-  const [allArtists, setAllArtists] = useState<string>("");
-  const [sensitivity, setSensitivity] = useState("0.5");
+  const [allArtists, setAllArtists] = useState<string>('');
+  const [sensitivity, setSensitivity] = useState('0.5');
 
   const {
     searchForSong,
@@ -47,19 +47,17 @@ export default function Home() {
   const { sanitizedTracks, generateAnswer } = generateAIResponse();
 
   const prompt: string =
-    sensitivity <= "0.9"
+    sensitivity <= '0.9'
       ? `Based on this mood, feeling, or specific query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash. Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n ${
           state?.likedSongs
             ? `On subsequent queries, consider some of these suggested songs and blend the genres into your suggestions: ${allArtists}`
-            : ""
+            : ''
         }`
       : `Give me the exact song that matches this query: ${input}, provide a maximum of three songs with each song's name and artist, separated by a dash.  Each song should be on a separate line. No excess line breaks in the beginning or end of the response. Example: Song Name - Artist Name\n`;
 
-  console.log("prompt", prompt);
-
   const clearTracks = () => {
-    localStorage.removeItem("tracks");
-    localStorage.removeItem("allSongs");
+    localStorage.removeItem('tracks');
+    localStorage.removeItem('allSongs');
     setState({
       ...state,
       tracks: [],
@@ -67,62 +65,54 @@ export default function Home() {
       isPaused: true,
       track: {
         duration_ms: 0,
-        preview_url: "",
+        preview_url: '',
         album: {
           images: [
             {
-              url: "",
+              url: '',
             },
           ],
         },
-        name: "",
+        name: '',
         artists: [
           {
-            name: "",
+            name: '',
           },
         ],
       },
     });
 
-    console.log("Pausing...");
+    console.log('Pausing...');
     fetch(
       `https://api.spotify.com/v1/me/player/pause?device_id=${state.deviceID}`,
       {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${state.userAuthorizationCode}`,
         },
       }
     );
-    console.log("Paused");
+    console.log('Paused');
   };
 
   const handleSession = (session: any) => {
-    if (typeof session === "string") {
-      try {
-        const sessionObj = JSON.parse(session);
-        console.log("Handling state session...", sessionObj);
-        setState({
-          ...state,
-          session: sessionObj,
-          expiresAt: sessionObj?.expires_at,
-          devCredentials: localStorage.getItem("devCredentials") || "",
-        });
-        console.log("Handling localStorage session");
-        localStorage.setItem("session", session);
-        localStorage.setItem("expiresAt", sessionObj?.expires_at);
+    try {
+      const sessionObj = session;
+      setState({
+        ...state,
+        session: sessionObj,
+        expiresAt: sessionObj?.expires_at,
+        devCredentials: localStorage.getItem('devCredentials') || '',
+      });
+      console.log('Handling localStorage session');
+      localStorage.setItem('session', JSON.stringify(sessionObj));
+      localStorage.setItem('expiresAt', sessionObj?.expires_at);
 
-        setLoading(false);
-        router.push("/");
-      } catch (error) {
-        console.error("Error parsing session:", error);
-      }
-    } else {
-      console.error(
-        "Invalid session type. Expected string, received:",
-        typeof session
-      );
+      setLoading(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Error parsing session:', error);
     }
   };
 
@@ -134,7 +124,7 @@ export default function Home() {
 
   const generateImage = async (genreString: any) => {
     counter.current++; // Increment the counter each time the function is called
-    console.log("counter", counter.current);
+    console.log('counter', counter.current);
     if (counter.current % 5 === 0) {
       // Construct the prompt using the genres to describe the image
       const prompt = `An abstract art image that represents the genres: ${genreString}`;
@@ -143,11 +133,11 @@ export default function Home() {
 
       try {
         // Make a request to the DALL·E 2.0 API to generate the image
-        console.log("Calling DALL·E API...");
-        const response = await fetch("/api/dalleAI", {
-          method: "POST",
+        console.log('Calling DALL·E API...');
+        const response = await fetch('/api/dalleAI', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ prompt }),
         });
@@ -158,69 +148,48 @@ export default function Home() {
         setImageUrl(data.imageUrl);
 
         // Save the imageUrl in localStorage
-        localStorage.setItem("imageUrl", data.imageUrl);
+        localStorage.setItem('imageUrl', data.imageUrl);
       } catch (error) {
-        console.error("Error during DALL·E API call:", error);
+        console.error('Error during DALL·E API call:', error);
       } finally {
         setImageIsLoading(false);
         setLoading(false);
-        console.log("DALL·E API call finished");
+        console.log('DALL·E API call finished');
       }
     } else {
       // Use the previously saved imageUrl from localStorage
-      const savedImageUrl = localStorage.getItem("imageUrl");
+      const savedImageUrl = localStorage.getItem('imageUrl');
       if (savedImageUrl) {
         setImageUrl(savedImageUrl);
       } else {
-        console.error("No saved imageUrl found in localStorage");
+        console.error('No saved imageUrl found in localStorage');
       }
     }
   };
 
   useEffect(() => {
-    const storedSessionStr = localStorage.getItem("session");
+    const storedSessionStr = localStorage.getItem('session');
 
     // If imageUrl already exists in localStorage, don't call the API again
-    const storedImageUrl = localStorage.getItem("imageUrl");
+    const storedImageUrl = localStorage.getItem('imageUrl');
     if (storedImageUrl) {
       setImageUrl(storedImageUrl);
       setImageIsLoading(false);
-      console.log("Image URL already exists in localStorage");
+      console.log('Image URL already exists in localStorage');
     }
 
     if (storedSessionStr) {
-      console.log("Session exists in localStorage");
-      handleSession(storedSessionStr);
+      console.log('Session exists in localStorage');
+      handleSession(JSON.parse(storedSessionStr));
     } else {
-      console.log("No session in localStorage");
+      console.log('No session in localStorage');
       supabase.auth.getSession().then((currentSession) => {
         handleSession(currentSession.data.session);
       });
     }
 
-    // const { data: authListener } = supabase.auth.onAuthStateChange(
-    //   (event, session) => {
-    //     if (event === "INITIAL_SESSION" && session !== null) {
-    //       const storedSessionStr = localStorage.getItem("session");
-    //       if (!storedSessionStr) {
-    //         console.log("Session does not exist in localStorage");
-
-    //         setState((prevState: any) => ({
-    //           ...prevState,
-    //           session: JSON.stringify(session),
-    //           expiresAt: session?.expires_at,
-    //           devCredentials: localStorage.getItem("devCredentials") || "",
-    //         }));
-
-    //         localStorage.setItem("session", JSON.stringify(session));
-    //       }
-    //       console.log("setting signed in session", session, event);
-    //     }
-    //   }
-    // );
-
     const loadAllSongsFromLocalStorage = (): TrackData[] => {
-      const storedAllSongs = localStorage.getItem("allSongs");
+      const storedAllSongs = localStorage.getItem('allSongs');
       return storedAllSongs ? JSON.parse(storedAllSongs) : [];
     };
 
@@ -241,38 +210,35 @@ export default function Home() {
   // }, [state.tracks]);
 
   useEffect(() => {
-    const likedSongsFromLocalStorage = localStorage.getItem("likedSongs");
-    const likedSongs: LikedSong[] | null = likedSongsFromLocalStorage
-      ? JSON.parse(likedSongsFromLocalStorage)
-      : state.likedSongs;
+    const likedSongs: LikedSong[] = state?.likedSongs;
 
     const allArtistsString: string = likedSongs
       ? likedSongs
           .map((song) => song.artists) // `song.artists` is already an array of artist names
           .flat() // Flatten the arrays to get a single array of artist names
           .filter((artist, index, self) => self.indexOf(artist) === index)
-          .join(", ")
-      : "";
+          .join(', ')
+      : '';
 
     setAllArtists(allArtistsString);
   }, [state?.likedSongs]);
 
   useEffect(() => {
     // Update the state with tracks from local storage when the component mounts
-    const localTracksStr = localStorage.getItem("tracks");
+    const localTracksStr = localStorage.getItem('tracks');
     if (localTracksStr) {
       const localTracks = JSON.parse(localTracksStr);
       setState({ ...state, tracks: localTracks });
     } else {
-      console.log("No tracks in localStorage");
+      console.log('No tracks in localStorage');
     }
   }, []); // Empty dependency array to run only on the initial render
 
   useEffect(() => {
-    if (sanitizedTracks !== "") {
-      const tracksArray = sanitizedTracks.split("\n");
+    if (sanitizedTracks !== '') {
+      const tracksArray = sanitizedTracks.split('\n');
       tracksArray.forEach((item, index) => {
-        if (item == "" || item == "" || item == " ") {
+        if (item == '' || item == '' || item == ' ') {
           tracksArray.splice(index, 1);
         }
       });
@@ -285,12 +251,12 @@ export default function Home() {
     const fetchLikedSongs = async () => {
       if (session?.user?.id) {
         const { data: likedSongs, error } = await supabase
-          .from("liked_songs")
-          .select("*")
-          .eq("user_id", session.user.id);
+          .from('liked_songs')
+          .select('*')
+          .eq('user_id', session.user.id);
 
         if (error) {
-          console.error("Error fetching liked songs:", error.message);
+          console.error('Error fetching liked songs:', error.message);
           return;
         }
 
@@ -299,11 +265,13 @@ export default function Home() {
             ...state,
             likedSongs: likedSongs,
           });
+          localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
         } else {
           setState({
             ...state,
             likedSongs: [],
           });
+          localStorage.setItem('likedSongs', JSON.stringify([]));
         }
       }
     };
@@ -315,25 +283,25 @@ export default function Home() {
     // Set the loading state to true to disable the button
 
     setIsRequestLoading(true);
-    console.log("isRequestLoading", isRequestLoading);
+    console.log('isRequestLoading', isRequestLoading);
 
-    if (sensitivity <= "0.9") {
+    if (sensitivity <= '0.9') {
       await generateAnswer(input, prompt, sensitivity).then(() => {
         setIsRequestLoading(false);
-        console.log("senstivity", sensitivity);
-        console.log("isRequestLoading", isRequestLoading);
+        console.log('senstivity', sensitivity);
+        console.log('isRequestLoading', isRequestLoading);
       });
     } else {
       // convert input string into array but dont split
-      const inputArrayWithArtist = input.split("\n");
+      const inputArrayWithArtist = input.split('\n');
 
       await searchForSong(inputArrayWithArtist, 3).then(() => {
         // wait a second to allow the tracks to be set in state
         setTimeout(() => {
           setIsRequestLoading(false);
-          console.log("inputArrayWithArtist", inputArrayWithArtist);
-          console.log("senstivity", sensitivity);
-          console.log("isRequestLoading", isRequestLoading);
+          console.log('inputArrayWithArtist', inputArrayWithArtist);
+          console.log('senstivity', sensitivity);
+          console.log('isRequestLoading', isRequestLoading);
         }, 1000);
       });
     }
@@ -344,16 +312,16 @@ export default function Home() {
   return (
     <main
       style={{
-        backgroundColor: imageIsLoading ? "#07173e" : "transparent",
-        transition: "background-color 2s ease-in-out",
+        backgroundColor: imageIsLoading ? '#07173e' : 'transparent',
+        transition: 'background-color 2s ease-in-out',
       }}
       className="h-fit flex flex-col mx-[5%] sm:mx-auto justify-center min-h-screen text-white bg-transparent">
-      {imageIsLoading && imageUrl == "" ? (
+      {imageIsLoading && imageUrl == '' ? (
         <div className="bg-[#07173e] transition-opacity opacity-100 -z-10 fixed top-0 left-0 w-full h-full" />
       ) : (
         <div className="-z-10 fixed top-0 left-0 w-full h-full transition-all opacity-100">
           <img
-            src={imageUrl || ""}
+            src={imageUrl || ''}
             alt="Generated image"
             className="object-cover w-full h-full"
             onLoad={() => setImageIsLoading(false)}
@@ -365,7 +333,7 @@ export default function Home() {
         <div className=" flex h-full min-h-screen">
           <div
             className={` ${
-              !fullImage && "bg-transparent !border-x-0"
+              !fullImage && 'bg-transparent !border-x-0'
             } lg:w-3/4 pb-20  px-[5%] bg-[#07173ef2] w-full sm:w-11/12  mx-auto  border-x-2 border-[#4f4f4f3c]`}>
             <Navigation fullImage={fullImage} setFullImage={setFullImage} />
             {fullImage && (
@@ -378,14 +346,14 @@ export default function Home() {
                         value={input}
                         name="query"
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                          if (e.key === 'Enter') {
                             handleGenerateAnswer();
                           }
                         }}
                         placeholder={
-                          sensitivity == "1"
-                            ? "Look for a specific song or artist..."
-                            : "Provide a mood, feeling, song, or artist..."
+                          sensitivity == '1'
+                            ? 'Look for a specific song or artist...'
+                            : 'Provide a mood, feeling, song, or artist...'
                         }
                         className="focus:outline-none focus:bg-transparent focus:bg-opacity-0 w-full py-1 text-white placeholder-[#cacaca] bg-transparent bg-white bg-opacity-0 rounded-md appearance-none"
                         type="text"

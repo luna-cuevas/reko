@@ -29,6 +29,10 @@ export type SpotifyAPIResponse = {
   tracks: {
     items: TrackData[];
   };
+  error?: {
+    status: number;
+    message: string;
+  };
 };
 
 export type UseOpenAIHook = {

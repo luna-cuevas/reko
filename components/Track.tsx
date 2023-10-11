@@ -28,24 +28,24 @@ const Track: React.FC<TrackProps> = ({
   const { name, artists, album, preview_url } = track;
   const { images } = album;
   const { state, setState } = useStateContext();
-  const session = JSON.parse(
-    localStorage.getItem('session') || state.session || '{}'
-  );
+  const session = JSON.parse(localStorage.getItem('session')!) || state.session;
   const [likedSongs, setLikedSongs] = useState([]);
 
   useEffect(() => {
-    const fetchLikedSongs = async () => {
-      const { data: databaseLikedSongs, error } = await supabase
-        .from('liked_songs')
-        .select('*')
-        .eq('user_id', session.user.id);
-      setLikedSongs(databaseLikedSongs as any);
-      setState({
-        ...state,
-        likedSongs: databaseLikedSongs as any,
-      });
-    };
-    fetchLikedSongs();
+    if (session.user.id) {
+      const fetchLikedSongs = async () => {
+        const { data: databaseLikedSongs, error } = await supabase
+          .from('liked_songs')
+          .select('*')
+          .eq('user_id', session.user.id);
+        setLikedSongs(databaseLikedSongs as any);
+        setState({
+          ...state,
+          likedSongs: databaseLikedSongs as any,
+        });
+      };
+      fetchLikedSongs();
+    }
   }, []);
 
   const handleLikeClick = () => {
