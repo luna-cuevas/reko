@@ -1,31 +1,31 @@
-import React, { useEffect, useState } from "react";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "../lib/supabaseClient";
-import { useStateContext } from "../context/StateContext";
-import { useRouter } from "next/router";
+import React, { useEffect, useState } from 'react';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from '../lib/supabaseClient';
+import { useStateContext } from '../context/StateContext';
+import { useRouter } from 'next/router';
 
 const login = () => {
   const { state, setState } = useStateContext();
   const router = useRouter();
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState('');
   const [imageIsLoading, setImageIsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loginPopUp, setLoginPopUp] = useState(false);
 
   const prompt =
-    "Generate an image based around music, art, abstract visuals, psychedelics, fairies, festivals";
+    'Generate an image based around music, art, abstract visuals, psychedelics, fairies, festivals';
 
   const handleAuthChange = async (event: any, session: any) => {
-    console.log("handleAuthChange", event, session);
-    if (event === "SIGNED_IN" && session !== null) {
+    console.log('handleAuthChange', event, session);
+    if (event === 'SIGNED_IN' && session !== null) {
       // Redirect to the homepage when the user logs in
-      localStorage.setItem("session", JSON.stringify(session));
+      localStorage.setItem('session', JSON.stringify(session));
       setState({
         ...state,
         session: session,
       });
-      router.push("/");
+      router.push('/');
     }
   };
 
@@ -39,11 +39,11 @@ const login = () => {
     const generateImage = async () => {
       try {
         // Make a request to the DALL·E API to generate the image
-        console.log("Calling DALL·E API...");
-        const response = await fetch("/api/dalleAI", {
-          method: "POST",
+        console.log('Calling DALL·E API...');
+        const response = await fetch('/api/dalleAI', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ prompt }),
         });
@@ -54,13 +54,13 @@ const login = () => {
         setImageUrl(data.imageUrl);
 
         // Save the imageUrl in localStorage
-        localStorage.setItem("imageUrl", data.imageUrl);
+        localStorage.setItem('imageUrl', data.imageUrl);
       } catch (error) {
-        console.error("Error during DALL·E API call:", error);
+        console.error('Error during DALL·E API call:', error);
       } finally {
         setImageIsLoading(false);
         setLoading(false);
-        console.log("DALL·E API call finished");
+        console.log('DALL·E API call finished');
       }
     };
     generateImage();
@@ -71,16 +71,16 @@ const login = () => {
   return (
     <main
       style={{
-        backgroundColor: imageIsLoading ? "#07173e" : "transparent",
-        transition: "background-color 2s ease-in-out",
+        backgroundColor: imageIsLoading ? '#07173e' : 'transparent',
+        transition: 'background-color 2s ease-in-out',
       }}
       className="h-fit flex flex-col relative mx-[5%] sm:mx-auto justify-center min-h-screen text-white ">
-      {imageIsLoading && imageUrl != "" ? (
+      {imageIsLoading && imageUrl != '' ? (
         <div className="bg-[#07173e] transition-opacity opacity-100 -z-10 fixed top-0 left-0 w-full h-full" />
       ) : (
         <div className="-z-10 fixed top-0 left-0 w-full h-full transition-opacity opacity-100">
           <img
-            src={imageUrl || ""}
+            src={imageUrl || ''}
             alt="Generated image"
             className="object-cover w-full h-full"
             onLoad={() => setImageIsLoading(false)}
@@ -102,23 +102,23 @@ const login = () => {
                 <div className="w-10/12 md:w-1/3 h-fit absolute m-auto top-0 bottom-0 left-0 rounded-lg right-0 z-10 p-10 bg-[#07173e]">
                   <Auth
                     supabaseClient={supabase}
-                    providers={["google", "github", "spotify"]}
+                    providers={['google']}
                     appearance={{
                       style: {
                         anchor: {
-                          color: "#ffffff",
+                          color: '#ffffff',
                         },
                         label: {
-                          color: "#ffffff",
+                          color: '#ffffff',
                         },
                         button: {
-                          backgroundColor: "#495571",
-                          border: "none",
-                          color: "#ffffff",
+                          backgroundColor: '#495571',
+                          border: 'none',
+                          color: '#ffffff',
                         },
                         input: {
-                          backgroundColor: "#495571",
-                          color: "#ffffff",
+                          backgroundColor: '#495571',
+                          color: '#ffffff',
                         },
                       },
                       theme: ThemeSupa,
@@ -130,10 +130,6 @@ const login = () => {
           </nav>
         </div>
         <div className=" bg-[#07173ef2] w-full px-[5%]  sm:w-11/12 xl:w-2/3 md:w-3/4 min-h-screen mx-auto transition-opacity opacity-100 py-10 border-2 border-[#4f4f4f3c]">
-          {/* text wrap in tailwind
-          https://tailwindcss.com/docs/line-clamp
-          
-          */}
           <h1 className="md:text-xl text-lg text-center break-words">
             Your Personalized Music Recommendation Station
           </h1>
@@ -152,7 +148,7 @@ const login = () => {
 
           <div className="flex flex-col mt-10 text-center">
             <p className="md:my-6 md:text-xl text-md my-4">
-              Elevate your music experience as Reko tailors song suggestions{" "}
+              Elevate your music experience as Reko tailors song suggestions{' '}
               specifically to your unique tastes and preferences.
             </p>
             <div className="justify-evenly flex w-full m-auto overflow-hidden">
@@ -217,44 +213,6 @@ const login = () => {
               captures a particular feeling, or fulfills a specific musical
               inquiry, Reko is here to serve you.
             </p>
-            {/* <div className="flex flex-col gap-4 m-auto">
-              <div className="flex w-full gap-6">
-                <div className="w-1/2">
-                  <img
-                    className="object-contain w-1/6"
-                    src="/images/personalized.png"
-                    alt=""
-                  />
-                </div>
-                <div className="w-1/2 py-4 bg-black">
-                  <h3>🎼 Personalized Song Recommendations:</h3>
-                  <p>
-                    Reko generates tailored song recommendations that align
-                    perfectly with your mood.
-                  </p>
-                </div>
-              </div>
-              <div className="w-full">
-                <img src="" alt="" />
-                <div>
-                  <h3>🔊 AI Generated Art:</h3>
-                  <p>
-                    Reko's AI generates unique art for each search request. The
-                    art is inspired by the genres and moods of the songs.
-                  </p>
-                </div>
-              </div>
-              <div className="w-full">
-                <img src="" alt="" />
-                <div>
-                  <h3>🔗 Spotify Integration:</h3>
-                  <p>
-                    Love what you hear? With just a few clicks, seamlessly add
-                    your liked songs to your Spotify account.
-                  </p>
-                </div>
-              </div>
-            </div> */}
           </div>
         </div>
       </div>
